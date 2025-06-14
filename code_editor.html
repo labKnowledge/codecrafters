@@ -84,6 +84,10 @@
         .action-button-icon:active {
             background-color: #4a4a4a;
         }
+        .action-button-icon:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
         .container {
             width: 100%; /* Take full width */
@@ -295,7 +299,22 @@
         .loaded-libraries li:hover {
             color: #ffffff; /* Highlight on hover */
         }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #007acc;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
 
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-900">
@@ -304,6 +323,14 @@
         <!-- Run Code Button (Play Icon) -->
         <button id="run-button" class="action-button-icon" title="Run Code (F5)">
             <i class="fas fa-play"></i>
+        </button>
+        <!-- Explain Code Button (Magic Wand Icon) -->
+        <button id="explain-code-button" class="action-button-icon ml-2" title="Explain Code (Gemini)">
+            <i class="fas fa-magic"></i>
+        </button>
+        <!-- Generate Code Button (Code Icon) -->
+        <button id="generate-code-button" class="action-button-icon ml-2" title="Generate Code from Comment (Gemini)" disabled>
+            <i class="fas fa-code"></i>
         </button>
         <!-- Tools/Library Button (Cog Icon) -->
         <button id="tools-button" class="action-button-icon ml-2" title="Tools & Libraries">
@@ -377,7 +404,9 @@
         const toggleOutputButton = document.getElementById('toggle-output-button');
         const outputPanel = document.getElementById('output-panel');
         const mainContainer = document.getElementById('main-container');
-        const loadedLibrariesList = document.getElementById('loaded-libraries-list'); // New: Reference to the loaded libraries UL
+        const loadedLibrariesList = document.getElementById('loaded-libraries-list');
+        const explainCodeButton = document.getElementById('explain-code-button');
+        const generateCodeButton = document.getElementById('generate-code-button'); // New: Generate Code button
 
         // Array to store loaded library URLs
         const loadedLibraries = [];
@@ -436,8 +465,8 @@ console.log(greet('Engineers'));
 // Example: Lodash (https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js)
 // Then use it: console.log('Lodash is array:', _.isArray([]));
 
-// Example of an intentional linting warning:
-var x = 10;
+// Highlight the comment below and click the '<i class="fas fa-code"></i>' button to generate code!
+// Function to add two numbers
 `
         });
 
@@ -472,8 +501,9 @@ var x = 10;
             const originalConsoleLog = console.log;
             const originalConsoleError = console.error;
 
+            // Fix for flatMap error: Manually convert args to string and join
             console.log = (...args) => {
-                outputConsole.textContent += args.map(arg => {
+                const message = args.map(arg => {
                     if (typeof arg === 'object' && arg !== null) {
                         try {
                             return JSON.stringify(arg, null, 2);
@@ -482,11 +512,12 @@ var x = 10;
                         }
                     }
                     return String(arg);
-                }).join(' ') + '\n';
+                }).join(' ');
+                outputConsole.textContent += message + '\n';
                 originalConsoleLog(...args);
             };
             console.error = (...args) => {
-                outputConsole.textContent += 'ERROR: ' + args.map(arg => {
+                const message = 'ERROR: ' + args.map(arg => {
                     if (typeof arg === 'object' && arg !== null) {
                         try {
                             return JSON.stringify(arg, null, 2);
@@ -495,7 +526,8 @@ var x = 10;
                         }
                     }
                     return String(arg);
-                }).join(' ') + '\n';
+                }).join(' ');
+                outputConsole.textContent += message + '\n';
                 originalConsoleError(...args);
             };
 
@@ -511,6 +543,121 @@ var x = 10;
                 }, 100);
             }
         });
+
+        // --- LLM Integration: Explain Code Logic ---
+        explainCodeButton.addEventListener('click', async () => {
+            const codeToExplain = editor.getValue();
+            if (!codeToExplain.trim()) {
+                outputConsole.textContent = 'Please enter some code to explain.';
+                return;
+            }
+
+            outputConsole.textContent = ''; // Clear previous output
+            outputConsole.innerHTML = '<div class="spinner"></div> Explaining code...'; // Show spinner
+
+            const prompt = `Explain the following JavaScript code in a clear and concise manner, suitable for an experienced developer:\n\n\`\`\`javascript\n${codeToExplain}\n\`\`\``;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Canvas runtime provides this for gemini-2.0-flash
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    outputConsole.textContent = text; // Display the explanation
+                } else {
+                    outputConsole.textContent = 'ERROR: Could not get explanation from LLM. Response structure unexpected.';
+                    console.error('LLM response unexpected:', result);
+                }
+            } catch (error) {
+                outputConsole.textContent = `ERROR: Failed to connect to LLM API. ${error.message}`;
+                console.error('LLM API call error:', error);
+            }
+        });
+
+        // --- LLM Integration: Generate Code Logic ---
+        generateCodeButton.addEventListener('click', async () => {
+            const selectedText = editor.getSelection();
+            if (!selectedText.trim()) {
+                outputConsole.textContent = 'Please highlight a comment in the editor to generate code.';
+                return;
+            }
+
+            // Simple check if it looks like a comment. For full robustness, CodeMirror's token info would be better.
+            const isComment = selectedText.startsWith('//') || selectedText.startsWith('/*');
+            if (!isComment) {
+                outputConsole.textContent = 'Please highlight a comment (starting with // or /*) to generate code.';
+                return;
+            }
+
+            outputConsole.textContent = ''; // Clear previous output
+            outputConsole.innerHTML = '<div class="spinner"></div> Generating code...'; // Show spinner
+
+            const prompt = `Based on the following JavaScript comment, generate the corresponding JavaScript code. Only return the code, without any additional explanations or markdown code blocks (e.g., do not wrap in \`\`\`javascript\`\`\`):\n\n${selectedText.trim()}\n`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Canvas runtime provides this for gemini-2.0-flash
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    let generatedCode = result.candidates[0].content.parts[0].text.trim();
+
+                    // Clean up potential markdown wrappers if the LLM still includes them
+                    if (generatedCode.startsWith('```javascript')) {
+                        generatedCode = generatedCode.substring('```javascript'.length);
+                    }
+                    if (generatedCode.endsWith('```')) {
+                        generatedCode = generatedCode.substring(0, generatedCode.length - '```'.length);
+                    }
+                    generatedCode = generatedCode.trim();
+
+                    // Get the current cursor position (end of selection)
+                    const cursor = editor.getCursor();
+                    const line = cursor.line;
+                    const ch = cursor.ch;
+
+                    // Insert generated code on the line after the selected comment
+                    // We also add an extra newline for better formatting
+                    editor.replaceRange('\n' + generatedCode + '\n', {line: line, ch: ch});
+                    outputConsole.textContent = 'Code generated successfully!';
+
+                    // Auto-indent the newly inserted code (optional, but good for UX)
+                    // This is a bit tricky with CodeMirror for specific ranges, but we can re-indent the current view
+                    // Or more simply, let the user trigger auto-indent (e.g., Ctrl+K Ctrl+F)
+
+                } else {
+                    outputConsole.textContent = 'ERROR: Could not generate code from LLM. Response structure unexpected.';
+                    console.error('LLM response unexpected:', result);
+                }
+            } catch (error) {
+                outputConsole.textContent = `ERROR: Failed to connect to LLM API. ${error.message}`;
+                console.error('LLM API call error:', error);
+            }
+        });
+
 
         // --- Library Loading Logic ---
         loadLibraryButton.addEventListener('click', () => {
@@ -583,12 +730,20 @@ var x = 10;
         });
 
 
-        // CodeMirror auto-completion trigger
+        // CodeMirror auto-completion trigger and Generate Code button enabler
         editor.on("inputRead", function(cm, change) {
             if (change.text[0] === "." || (change.origin === "+input" && /[\w$]$/.test(change.text[0]))) {
                 CodeMirror.commands.autocomplete(cm, null, { completeSingle: false });
             }
         });
+
+        editor.on("cursorActivity", () => {
+            const selectedText = editor.getSelection();
+            // Enable generateCodeButton if selection is not empty and appears to be a comment
+            const isComment = selectedText.startsWith('//') || selectedText.startsWith('/*');
+            generateCodeButton.disabled = !selectedText.trim() || !isComment;
+        });
+
 
         // Initial setup for CodeMirror to take full height
         editor.setSize(null, '100%');
