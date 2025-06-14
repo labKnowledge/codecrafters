@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCrafters Academy - Start Your Coding Journey</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .form-checkbox:checked, .form-radio:checked {
+            background-color: #4f46e5; /* indigo-600 */
+            border-color: #4f46e5;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-indigo-600">
+                <span class="mr-1">🚀</span>CodeCrafters
+            </a>
+            <nav>
+                <a href="#features" class="text-slate-600 hover:text-indigo-600 px-4">Features</a>
+                <a href="#courses" class="text-slate-600 hover:text-indigo-600 px-4">Courses</a>
+                <a href="#start" class="bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">Get Started</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section -->
+        <section class="bg-white">
+            <div class="container mx-auto px-6 py-20 md:py-32 text-center">
+                <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 leading-tight">
+                    Unlock Your Future, One Line of Code at a Time.
+                </h1>
+                <p class="mt-6 text-lg md:text-xl text-slate-600 max-w-3xl mx-auto">
+                    Join CodeCrafters Academy to gain the skills you need for a career in tech. We offer flexible, expert-led courses designed to take you from beginner to job-ready.
+                </p>
+                <a href="#start" class="mt-10 inline-block bg-indigo-600 text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-indigo-700 transition-transform hover:scale-105">
+                    Start Learning Today
+                </a>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900">Why Choose CodeCrafters?</h2>
+                    <p class="mt-4 text-slate-600">We provide the best environment for you to succeed.</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8 text-center">
+                    <!-- Feature 1 -->
+                    <div class="bg-white p-8 rounded-xl shadow-md">
+                        <div class="text-4xl text-indigo-500 mb-4">👨‍🏫</div>
+                        <h3 class="text-xl font-bold mb-2">Expert Instructors</h3>
+                        <p class="text-slate-600">Learn from industry veterans who have real-world experience at top tech companies.</p>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="bg-white p-8 rounded-xl shadow-md">
+                        <div class="text-4xl text-indigo-500 mb-4">🗓️</div>
+                        <h3 class="text-xl font-bold mb-2">Flexible Learning</h3>
+                        <p class="text-slate-600">Choose between online or in-person classes with schedules that fit your life.</p>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="bg-white p-8 rounded-xl shadow-md">
+                        <div class="text-4xl text-indigo-500 mb-4">💻</div>
+                        <h3 class="text-xl font-bold mb-2">Project-Based Curriculum</h3>
+                        <p class="text-slate-600">Build a portfolio of real-world projects to showcase your skills to employers.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Courses Section -->
+        <section id="courses" class="bg-white py-20">
+             <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900">Our Popular Courses</h2>
+                    <p class="mt-4 text-slate-600">Courses tailored for the most in-demand jobs.</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="border border-slate-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+                        <h3 class="font-bold text-lg text-indigo-700">Full-Stack Web Development</h3>
+                        <p class="mt-2 text-slate-600">Master HTML, CSS, JavaScript, React, and Node.js to build complete web applications.</p>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+                        <h3 class="font-bold text-lg text-indigo-700">Python & Data Science</h3>
+                        <p class="mt-2 text-slate-600">Dive into data analysis, machine learning, and automation with Python.</p>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+                        <h3 class="font-bold text-lg text-indigo-700">Mobile App Development</h3>
+                        <p class="mt-2 text-slate-600">Build beautiful and functional iOS and Android apps with React Native.</p>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+                        <h3 class="font-bold text-lg text-indigo-700">UI/UX Design Fundamentals</h3>
+                        <p class="mt-2 text-slate-600">Learn the principles of user-centric design to create intuitive interfaces.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Get Started Form Section -->
+        <section id="start" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-xl p-8 md:p-12">
+                    <div id="form-container">
+                        <h2 class="text-3xl font-bold text-center text-slate-900">Let's Get Started!</h2>
+                        <p class="mt-3 text-center text-slate-600 mb-8">Fill out the form below and we'll get in touch with you to discuss your learning path.</p>
+                        
+                        <!-- The form that collects student information -->
+                        <form id="interest-form">
+                            <!-- Name Input -->
+                            <div class="mb-5">
+                                <label for="name" class="block mb-2 font-medium text-slate-700">Full Name</label>
+                                <input type="text" id="name" name="name" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., Ada Lovelace" required>
+                            </div>
+
+                            <!-- Email Input -->
+                            <div class="mb-5">
+                                <label for="email" class="block mb-2 font-medium text-slate-700">Email Address</label>
+                                <input type="email" id="email" name="email" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="you@example.com" required>
+                            </div>
+
+                            <!-- Phone Number Input (Optional) -->
+                            <div class="mb-5">
+                                <label for="phone" class="block mb-2 font-medium text-slate-700">Phone Number <span class="text-sm text-slate-500">(Optional)</span></label>
+                                <input type="tel" id="phone" name="phone" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="(123) 456-7890">
+                            </div>
+
+                            <!-- Course Interest Input -->
+                            <div class="mb-5">
+                                <label for="course_interest" class="block mb-2 font-medium text-slate-700">What do you want to learn?</label>
+                                <input type="text" id="course_interest" name="course_interest" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., Python, Web Development, Data Science" required>
+                            </div>
+
+                            <!-- Availability Checkboxes -->
+                            <div class="mb-6">
+                                <label class="block mb-2 font-medium text-slate-700">When are you available?</label>
+                                <div class="grid sm:grid-cols-2 gap-3">
+                                    <label class="flex items-center p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                        <input type="checkbox" name="availability" value="weekdays" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                        <span class="ml-3 text-slate-700">Weekdays</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                        <input type="checkbox" name="availability" value="weekends" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                        <span class="ml-3 text-slate-700">Weekends</span>
+                                    </label>
+                                     <label class="flex items-center p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                        <input type="checkbox" name="availability" value="mornings" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                        <span class="ml-3 text-slate-700">Mornings</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                        <input type="checkbox" name="availability" value="evenings" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                        <span class="ml-3 text-slate-700">Evenings</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Learning Preference Radios -->
+                            <div class="mb-8">
+                                <label class="block mb-2 font-medium text-slate-700">How would you like to learn?</label>
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <label class="flex-1 flex items-center p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                        <input type="radio" name="learning_preference" value="online" class="form-radio h-5 w-5 text-indigo-600 border-slate-300 focus:ring-indigo-500" required>
+                                        <span class="ml-3 text-slate-700">Online</span>
+                                    </label>
+                                    <label class="flex-1 flex items-center p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                        <input type="radio" name="learning_preference" value="in-person" class="form-radio h-5 w-5 text-indigo-600 border-slate-300 focus:ring-indigo-500" required>
+                                        <span class="ml-3 text-slate-700">In-Person</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" id="submit-button" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg text-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all disabled:bg-indigo-400">
+                                Submit Information
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Success Message -->
+                    <div id="success-message" class="hidden text-center">
+                        <div class="text-6xl mb-4">🎉</div>
+                        <h2 class="text-3xl font-bold text-slate-900">Thank You!</h2>
+                        <p class="mt-3 text-slate-600">We've received your information. A member of our team will reach out to you shortly to discuss the next steps. Welcome to the future of code!</p>
+                    </div>
+                    
+                    <!-- Error Message -->
+                     <div id="error-message" class="hidden text-center bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mt-4">
+                        <strong class="font-bold">Oops!</strong>
+                        <span class="block sm:inline">Something went wrong. Please try again later.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-white">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2024 CodeCrafters Academy. All Rights Reserved.</p>
+            <p class="text-sm text-slate-400 mt-2">Empowering the next generation of innovators.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // --- Form Submission Logic ---
+        
+        const form = document.getElementById('interest-form');
+        const formContainer = document.getElementById('form-container');
+        const successMessage = document.getElementById('success-message');
+        const errorMessage = document.getElementById('error-message');
+        const submitButton = document.getElementById('submit-button');
+        
+        // The webhook URL provided by the user
+        const webhookUrl = 'https://model.takenolab.tech/webhook-test/interested-students';
+        
+        form.addEventListener('submit', async function(event) {
+            // Prevent the default form submission behavior (page reload)
+            event.preventDefault();
+            
+            // Disable the button and show a loading state
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+            errorMessage.classList.add('hidden'); // Hide any previous error
+
+            // Create a FormData object from the form
+            const formData = new FormData(form);
+            
+            // Convert FormData to a plain JavaScript object
+            const data = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                course_interest: formData.get('course_interest'),
+                learning_preference: formData.get('learning_preference'),
+                // Get all selected availability options
+                availability: formData.getAll('availability')
+            };
+
+            try {
+                // Use the fetch API to send the data to the webhook
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    // Convert the JavaScript object to a JSON string
+                    body: JSON.stringify(data),
+                });
+                
+                // Check if the request was successful
+                if (response.ok) {
+                    // Hide the form and show the success message
+                    formContainer.classList.add('hidden');
+                    successMessage.classList.remove('hidden');
+                } else {
+                    // If the server responds with an error, show the error message
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+
+            } catch (error) {
+                console.error('Form submission error:', error);
+                // Show the error message to the user
+                errorMessage.classList.remove('hidden');
+                // Re-enable the button so the user can try again
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit Information';
+            }
+        });
+    </script>
+</body>
+</html>
