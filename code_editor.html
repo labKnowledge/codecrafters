@@ -87,21 +87,24 @@
 
         .container {
             width: 100%; /* Take full width */
-            /* Calculate height based on viewport height minus top bar height */
             height: calc(100vh - var(--top-action-bar-height));
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr; /* Default: two columns */
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
             border-radius: 0;
-            overflow: hidden; /* Crucial: Container handles its own overflow by letting grid items fill it */
+            overflow: hidden;
             background-color: #252526;
             border: none;
         }
 
-        @media (min-width: 768px) {
+        /* Hide the output panel, making editor full width */
+        .container.output-hidden {
+            grid-template-columns: 1fr; /* Editor takes full width */
+        }
+
+        @media (max-width: 767px) {
             .container {
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: 1fr;
+                grid-template-columns: 1fr; /* Stack panels on mobile */
             }
         }
 
@@ -110,9 +113,8 @@
             flex-direction: column;
             background-color: #1e1e1e;
             border-radius: 0;
-            /* editor-panel's content (CodeMirror) will handle its own scrolling */
-            height: 100%; /* Fill parent container's height */
-            overflow: hidden; /* Ensure panel itself doesn't scroll, relying on CodeMirror's scroll */
+            height: 100%;
+            overflow: hidden; /* Panel itself doesn't scroll, relying on CodeMirror/output pre */
         }
 
         @media (min-width: 768px) {
@@ -135,7 +137,7 @@
             line-height: 1.5;
             height: 100%; /* CodeMirror itself fills its panel */
             flex-grow: 1;
-            /* Removed overflow: hidden from here, as CodeMirror's internal scroll handles overflow */
+            /* CodeMirror's internal scroll handles overflow */
             background-color: #1e1e1e !important;
             padding-bottom: 0;
             min-height: 200px; /* Ensure sufficient height for scrollbar to appear */
@@ -283,6 +285,10 @@
         <button id="tools-button" class="action-button-icon ml-2" title="Tools & Libraries">
             <i class="fas fa-cog"></i>
         </button>
+        <!-- Toggle Output Panel Visibility Button -->
+        <button id="toggle-output-button" class="action-button-icon ml-2" title="Toggle Output Panel">
+            <i class="fas fa-terminal"></i> <!-- Default to terminal icon, implies output is visible -->
+        </button>
 
         <!-- Library Control Panel (Initially Hidden) -->
         <div id="library-control-panel" class="library-control-panel">
@@ -293,14 +299,14 @@
         </div>
     </div>
 
-    <div class="container">
+    <div id="main-container" class="container">
         <!-- Editor Panel -->
         <div class="editor-panel">
             <textarea id="code-editor"></textarea>
         </div>
 
         <!-- Output Panel -->
-        <div class="output-panel">
+        <div id="output-panel" class="output-panel">
             <pre id="output"></pre>
         </div>
     </div>
@@ -336,6 +342,9 @@
         const libraryStatus = document.getElementById('library-status');
         const toolsButton = document.getElementById('tools-button');
         const libraryControlPanel = document.getElementById('library-control-panel');
+        const toggleOutputButton = document.getElementById('toggle-output-button'); // New button for output panel
+        const outputPanel = document.getElementById('output-panel'); // Reference to the output panel container
+        const mainContainer = document.getElementById('main-container'); // Main content container
 
         // Initialize CodeMirror editor
         const editor = CodeMirror.fromTextArea(codeEditorElement, {
@@ -495,6 +504,24 @@ var x = 10;
             }
         });
 
+        // Toggle Output Panel Visibility Logic
+        toggleOutputButton.addEventListener('click', () => {
+            outputPanel.classList.toggle('hidden-output');
+            mainContainer.classList.toggle('output-hidden'); // Adjust grid layout
+            const isHidden = outputPanel.classList.contains('hidden-output');
+
+            if (isHidden) {
+                toggleOutputButton.innerHTML = '<i class="fas fa-terminal"></i>'; // Show terminal icon
+                toggleOutputButton.title = 'Show Output Panel';
+            } else {
+                toggleOutputButton.innerHTML = '<i class="fas fa-eye-slash"></i>'; // Hide icon
+                toggleOutputButton.title = 'Hide Output Panel';
+            }
+            // Important: Refresh CodeMirror size if its container size changes
+            editor.refresh();
+        });
+
+
         // CodeMirror auto-completion trigger
         editor.on("inputRead", function(cm, change) {
             if (change.text[0] === "." || (change.origin === "+input" && /[\w$]$/.test(change.text[0]))) {
@@ -503,7 +530,6 @@ var x = 10;
         });
 
         // Initial setup for CodeMirror to take full height
-        // This is important because CodeMirror needs its container to have a defined height
         editor.setSize(null, '100%');
     </script>
 </body>
