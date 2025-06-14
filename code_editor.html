@@ -272,6 +272,30 @@
         .text-blue-600 { background-color: #1a2a4a; border-color: #004080; color: #aaddff; }
         .text-green-600 { background-color: #1e4a1e; border-color: #008000; color: #aaffaa; }
 
+        /* Styles for loaded libraries list */
+        .loaded-libraries {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #3c3c3c;
+            color: #a0a0a0;
+            max-height: 150px; /* Limit height of the list */
+            overflow-y: auto; /* Make the list scrollable */
+        }
+        .loaded-libraries ul {
+            list-style: none; /* Remove bullet points */
+            padding: 0;
+            margin: 0;
+        }
+        .loaded-libraries li {
+            font-size: 0.8rem;
+            padding: 4px 0;
+            word-break: break-all; /* Break long URLs */
+            color: #c0c0c0;
+        }
+        .loaded-libraries li:hover {
+            color: #ffffff; /* Highlight on hover */
+        }
+
     </style>
 </head>
 <body class="bg-gray-900">
@@ -296,6 +320,14 @@
             <input type="text" id="library-url" placeholder="Paste library URL (e.g., d3.min.js)">
             <button id="load-library-button">Load Library</button>
             <div id="library-status"></div>
+
+            <div class="loaded-libraries">
+                <h4 class="text-white text-sm font-semibold mb-1">Loaded Libraries:</h4>
+                <ul id="loaded-libraries-list">
+                    <!-- Loaded libraries will be displayed here -->
+                    <li class="text-gray-400">No libraries loaded yet.</li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -324,9 +356,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/javascript-hint.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/lint/lint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jshint/2.13.5/jshint.min.js"></script> <!-- Required for javascript-lint -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/lint/javascript-lint.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/keymap/sublime.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jshint/2.13.5/jshint.min.js"></script> <!-- Required for javascript-lint -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/foldcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/foldgutter.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/brace-fold.min.js"></script>
@@ -342,9 +374,13 @@
         const libraryStatus = document.getElementById('library-status');
         const toolsButton = document.getElementById('tools-button');
         const libraryControlPanel = document.getElementById('library-control-panel');
-        const toggleOutputButton = document.getElementById('toggle-output-button'); // New button for output panel
-        const outputPanel = document.getElementById('output-panel'); // Reference to the output panel container
-        const mainContainer = document.getElementById('main-container'); // Main content container
+        const toggleOutputButton = document.getElementById('toggle-output-button');
+        const outputPanel = document.getElementById('output-panel');
+        const mainContainer = document.getElementById('main-container');
+        const loadedLibrariesList = document.getElementById('loaded-libraries-list'); // New: Reference to the loaded libraries UL
+
+        // Array to store loaded library URLs
+        const loadedLibraries = [];
 
         // Initialize CodeMirror editor
         const editor = CodeMirror.fromTextArea(codeEditorElement, {
@@ -367,7 +403,7 @@
                 "Ctrl-Q": function(cm){
                     cm.foldCode(cm.getCursor());
                 },
-                "F5": function(cm) { // Map F5 to run code
+                "F5": function(cm) {
                     runButton.click();
                 }
             },
@@ -404,6 +440,29 @@ console.log(greet('Engineers'));
 var x = 10;
 `
         });
+
+        // Function to render the list of loaded libraries
+        function renderLoadedLibraries() {
+            loadedLibrariesList.innerHTML = ''; // Clear existing list
+            if (loadedLibraries.length === 0) {
+                const li = document.createElement('li');
+                li.className = 'text-gray-400';
+                li.textContent = 'No libraries loaded yet.';
+                loadedLibrariesList.appendChild(li);
+            } else {
+                loadedLibraries.forEach(url => {
+                    const li = document.createElement('li');
+                    // Display just the filename for brevity, but full URL on hover
+                    const filename = url.substring(url.lastIndexOf('/') + 1);
+                    li.textContent = filename;
+                    li.title = url; // Full URL on hover
+                    loadedLibrariesList.appendChild(li);
+                });
+            }
+        }
+
+        // Initial render of loaded libraries
+        renderLoadedLibraries();
 
         // --- Code Execution Logic ---
         runButton.addEventListener('click', () => {
@@ -462,8 +521,8 @@ var x = 10;
                 return;
             }
 
-            const existingScripts = document.querySelectorAll(`script[src="${libraryUrl}"]`);
-            if (existingScripts.length > 0) {
+            // Check if the script is already loaded to prevent duplicates
+            if (loadedLibraries.includes(libraryUrl)) {
                 libraryStatus.textContent = 'Library already loaded.';
                 libraryStatus.className = 'mt-3 text-sm text-yellow-600';
                 return;
@@ -480,6 +539,8 @@ var x = 10;
                 libraryStatus.textContent = `Library "${libraryUrl.split('/').pop()}" loaded successfully!`;
                 libraryStatus.className = 'mt-3 text-sm text-green-600';
                 libraryUrlInput.value = '';
+                loadedLibraries.push(libraryUrl); // Add to the list
+                renderLoadedLibraries(); // Re-render the list
             };
 
             script.onerror = (e) => {
