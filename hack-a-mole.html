@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Mole</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .hole-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .hole {
+            width: 120px;
+            height: 120px;
+            background-color: #a0522d; /* Saddle Brown */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            border: 5px solid #8b4513; /* Sienna */
+            box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .mole {
+            width: 80%;
+            height: 80%;
+            background-color: #8b4513; /* Sienna */
+            border-radius: 50%;
+            position: absolute;
+            bottom: -90%; /* Start hidden below the hole */
+            transition: bottom 0.2s ease-out;
+            border: 3px solid #5a2e0a; /* Darker brown */
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .hole.up .mole {
+            bottom: 5%; /* Move up into the hole */
+        }
+
+        .auth-form {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 2rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            background-color: #f9fafb;
+        }
+
+        .button-primary {
+            @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200;
+        }
+
+        .button-secondary {
+            @apply bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-200;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            .hole-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            .hole {
+                width: 100px;
+                height: 100px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hole-grid {
+                grid-template-columns: 1fr;
+            }
+            .hole {
+                width: 100%;
+                max-width: 120px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter">
+    <div class="container">
+        <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-6">Whack-a-Mole!</h1>
+
+        <!-- Auth Section -->
+        <div id="auth-section" class="auth-form">
+            <h2 id="auth-title" class="text-2xl font-bold text-gray-800 mb-6 text-center">Register</h2>
+            <div class="mb-4">
+                <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                <input type="email" id="email" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Your email">
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+                <input type="password" id="password" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" placeholder="Password (min 6 characters)">
+            </div>
+            <div id="auth-error-message" class="text-red-600 text-sm mb-4 text-center"></div>
+            <div class="flex items-center justify-between">
+                <button id="auth-button" class="button-primary w-full">Register</button>
+            </div>
+            <p class="text-center text-gray-600 text-sm mt-4">
+                <span id="toggle-auth-text">Already have an account?</span>
+                <a href="#" id="toggle-auth-mode" class="text-blue-600 hover:text-blue-800 font-bold ml-1">Login here.</a>
+            </p>
+        </div>
+
+        <!-- Game Section -->
+        <div id="game-section" style="display: none;">
+            <div class="flex justify-between items-center mb-4">
+                <p class="text-lg font-semibold text-gray-700">Logged in as: <span id="user-email" class="font-bold text-blue-600"></span></p>
+                <button id="logout-button" class="button-secondary text-sm">Logout</button>
+            </div>
+            <div class="flex justify-between items-center mb-6 bg-gray-100 p-4 rounded-lg shadow-inner">
+                <p class="text-2xl font-bold text-gray-800">Score: <span id="score-display" class="text-green-600">0</span></p>
+                <p class="text-2xl font-bold text-gray-800">High Score: <span id="high-score-display" class="text-purple-600">0</span></p>
+            </div>
+
+            <div class="flex justify-center gap-4 mb-8">
+                <button id="start-button" class="button-primary">Start Game</button>
+                <button id="stop-button" class="button-secondary" disabled>Stop Game</button>
+            </div>
+
+            <div class="hole-grid">
+                <div class="hole" data-id="0">
+                    <div class="mole"></div>
+                </div>
+                <div class="hole" data-id="1">
+                    <div class="mole"></div>
+                </div>
+                <div class="hole" data-id="2">
+                    <div class="mole"></div>
+                </div>
+                <div class="hole" data-id="3">
+                    <div class="mole"></div>
+                </div>
+                <div class="hole" data-id="4">
+                    <div class="mole"></div>
+                </div>
+                <div class="hole" data-id="5">
+                    <div class="mole"></div>
+                </div>
+                <div class="hole" data-id="6">
+                    <div class="mole"></div>
+                </div>
+                <div class="hole" data-id="7">
+                    <div class="mole"></div>
+                </div>
+                <div class="hole" data-id="8">
+                    <div class="mole"></div>
+                </div>
+            </div>
+            <div id="game-message" class="text-center text-lg mt-4 font-semibold text-gray-700">Click Start to begin!</div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Webhook endpoint for all operations
+        const WEBHOOK_URL = 'https://model.takenolab.tech/webhook-test/whack-a-mole';
+        const MIN_PASSWORD_LENGTH = 6; // Define minimum password length
+
+        // UI Elements
+        const authSection = document.getElementById('auth-section');
+        const gameSection = document.getElementById('game-section');
+        const authTitle = document.getElementById('auth-title');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const authButton = document.getElementById('auth-button');
+        const authErrorMessage = document.getElementById('auth-error-message');
+        const toggleAuthModeLink = document.getElementById('toggle-auth-mode');
+        const toggleAuthText = document.getElementById('toggle-auth-text');
+        const logoutButton = document.getElementById('logout-button');
+        const userEmailSpan = document.getElementById('user-email');
+        const scoreDisplay = document.getElementById('score-display');
+        const highScoreDisplay = document.getElementById('high-score-display');
+        const startButton = document.getElementById('start-button');
+        const stopButton = document.getElementById('stop-button');
+        const gameMessage = document.getElementById('game-message');
+        const holes = document.querySelectorAll('.hole');
+
+        let isRegisterMode = true; // Start in register mode
+        let loggedInUserEmail = null; // Stores the email of the logged-in user
+        let userHighScore = 0; // Stores the high score fetched on login or updated locally
+        let currentScore = 0;
+        let activeHole = null;
+        let moleTimer = null;
+        let gameActive = false;
+
+        // Game Logic functions - Defined earlier to avoid ReferenceError
+        const resetGame = () => {
+            currentScore = 0;
+            scoreDisplay.textContent = currentScore;
+            gameMessage.textContent = "Click Start to begin!";
+            holes.forEach(hole => hole.classList.remove('up'));
+            if (moleTimer) clearTimeout(moleTimer);
+            activeHole = null;
+        };
+
+        const stopGame = () => {
+            if (!gameActive) return;
+            gameActive = false;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            if (moleTimer) clearTimeout(moleTimer);
+            holes.forEach(hole => hole.classList.remove('up'));
+            if (activeHole) activeHole = null;
+            gameMessage.textContent = `Game Over! Your score: ${currentScore}.`;
+            // Only save if current score is higher than the currently displayed high score
+            if (loggedInUserEmail && currentScore > userHighScore) {
+                saveHighScore(loggedInUserEmail, currentScore);
+            }
+        };
+
+        /**
+         * Updates the UI to show either the authentication section or the game section.
+         * @param {string|null} email - The email of the logged-in user, or null if logged out.
+         * @param {number} [highScore=0] - The high score for the user. Defaults to 0.
+         */
+        const updateUI = (email, highScore = 0) => {
+            if (email) {
+                authSection.style.display = 'none';
+                gameSection.style.display = 'block';
+                userEmailSpan.textContent = email;
+                loggedInUserEmail = email;
+                userHighScore = highScore;
+                highScoreDisplay.textContent = userHighScore;
+                console.log(`Logged in as: ${email}, High Score: ${highScore}`);
+            } else {
+                authSection.style.display = 'block';
+                gameSection.style.display = 'none';
+                userEmailSpan.textContent = '';
+                loggedInUserEmail = null;
+                userHighScore = 0;
+                highScoreDisplay.textContent = '0';
+                currentScore = 0;
+                scoreDisplay.textContent = '0';
+                stopGame(); // Ensure game is stopped if user logs out
+                console.log("Logged out.");
+            }
+        };
+
+        /**
+         * Validates email and password inputs.
+         * @param {string} email - The email input.
+         * @param {string} password - The password input.
+         * @returns {string|null} - An error message if validation fails, otherwise null.
+         */
+        const validateInputs = (email, password) => {
+            if (!email || !password) {
+                return 'Please enter both email and password.';
+            }
+            if (password.length < MIN_PASSWORD_LENGTH) {
+                return `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`;
+            }
+            // Basic email format validation
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return 'Please enter a valid email address.';
+            }
+            return null; // No errors
+        };
+
+
+        /**
+         * Handles user registration by sending data to the webhook.
+         * @param {string} email - The user's email.
+         * @param {string} password - The user's password.
+         */
+        const registerUser = async (email, password) => {
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'register',
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    authErrorMessage.textContent = 'Registration successful! You can now log in.';
+                    // Switch to login mode after successful registration
+                    isRegisterMode = false;
+                    authTitle.textContent = 'Login';
+                    authButton.textContent = 'Login';
+                    toggleAuthText.textContent = "Don't have an account?";
+                    toggleAuthModeLink.textContent = 'Register here.';
+                    emailInput.value = email; // Pre-fill email
+                    passwordInput.value = ''; // Clear password field
+                } else {
+                    authErrorMessage.textContent = result.message || 'Registration failed.';
+                }
+            } catch (error) {
+                console.error("Registration error:", error);
+                authErrorMessage.textContent = `Error during registration: ${error.message}`;
+            }
+        };
+
+        /**
+         * Handles user login by sending data to the webhook.
+         * Assumes the webhook response on successful login might include a high score.
+         * @param {string} email - The user's email.
+         * @param {string} password - The user's password.
+         */
+        const loginUser = async (email, password) => {
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'login',
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    // Assuming the webhook returns user data including highScore on successful login
+                    const userHighScoreFromWebhook = result.highScore || 0;
+                    updateUI(email, userHighScoreFromWebhook);
+                    authErrorMessage.textContent = 'Login successful!';
+                } else {
+                    authErrorMessage.textContent = result.message || 'Login failed. Invalid credentials.';
+                }
+            } catch (error) {
+                console.error("Login error:", error);
+                authErrorMessage.textContent = `Error during login: ${error.message}`;
+            }
+        };
+
+        /**
+         * Handles saving the high score to the webhook.
+         * @param {string} userEmail - The email of the logged-in user.
+         * @param {number} score - The score to save.
+         */
+        const saveHighScore = async (userEmail, score) => {
+            if (!userEmail) {
+                console.warn("Cannot save score: No user logged in.");
+                return;
+            }
+            if (score <= userHighScore) {
+                console.log("Current score not higher than high score. Not saving.");
+                return;
+            }
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'score',
+                        email: userEmail,
+                        score: score
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    console.log(`High score saved for ${userEmail}: ${score}`, result);
+                    userHighScore = score; // Update local high score immediately
+                    highScoreDisplay.textContent = userHighScore;
+                    gameMessage.textContent = "New high score saved!";
+                } else {
+                    gameMessage.textContent = result.message || `Error saving high score.`;
+                    console.error("Error saving high score:", result.message);
+                }
+            } catch (error) {
+                console.error("Network error saving high score:", error);
+                gameMessage.textContent = `Network error saving high score: ${error.message}`;
+            }
+        };
+
+        // Initialize UI on load: Start with the register form
+        // Set initial state for register mode UI
+        authTitle.textContent = 'Register';
+        authButton.textContent = 'Register';
+        toggleAuthText.textContent = 'Already have an account?';
+        toggleAuthModeLink.textContent = 'Login here.';
+        updateUI(null);
+
+
+        // Toggle Auth Mode (Login/Register)
+        toggleAuthModeLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            isRegisterMode = !isRegisterMode;
+            if (isRegisterMode) {
+                authTitle.textContent = 'Register';
+                authButton.textContent = 'Register';
+                toggleAuthText.textContent = 'Already have an account?';
+                toggleAuthModeLink.textContent = 'Login here.';
+                passwordInput.placeholder = 'Password (min 6 characters)';
+            } else {
+                authTitle.textContent = 'Login';
+                authButton.textContent = 'Login';
+                toggleAuthText.textContent = "Don't have an account?";
+                toggleAuthModeLink.textContent = 'Register here.';
+                passwordInput.placeholder = 'Password';
+            }
+            authErrorMessage.textContent = ''; // Clear message on mode switch
+            passwordInput.value = ''; // Clear password field on mode switch
+        });
+
+        // Auth Button Click Handler
+        authButton.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            authErrorMessage.textContent = ''; // Clear previous errors
+
+            const validationError = validateInputs(email, password);
+            if (validationError) {
+                authErrorMessage.textContent = validationError;
+                return;
+            }
+
+            if (isRegisterMode) {
+                await registerUser(email, password);
+            } else {
+                await loginUser(email, password);
+            }
+        });
+
+        // Logout Button Handler
+        logoutButton.addEventListener('click', () => {
+            updateUI(null); // Simply clear client-side session
+            authErrorMessage.textContent = ''; // Clear any previous auth error
+            // Reset form to register mode on logout
+            isRegisterMode = true;
+            authTitle.textContent = 'Register';
+            authButton.textContent = 'Register';
+            toggleAuthText.textContent = 'Already have an account?';
+            toggleAuthModeLink.textContent = 'Login here.';
+            emailInput.value = '';
+            passwordInput.value = '';
+            passwordInput.placeholder = 'Password (min 6 characters)';
+        });
+
+        // Game Logic
+        const startGame = () => {
+            if (gameActive) return;
+            if (!loggedInUserEmail) {
+                gameMessage.textContent = "Please log in to play the game!";
+                return;
+            }
+            gameActive = true;
+            resetGame();
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            gameMessage.textContent = "Whack the mole!";
+            popRandomMole();
+        };
+
+        const popRandomMole = () => {
+            if (!gameActive) return;
+
+            // Hide the previously active mole
+            if (activeHole) {
+                activeHole.classList.remove('up');
+            }
+
+            // Select a new random hole
+            const randomIndex = Math.floor(Math.random() * holes.length);
+            const newActiveHole = holes[randomIndex];
+
+            // Ensure the new mole is different from the previous one, if possible
+            if (newActiveHole === activeHole && holes.length > 1) {
+                // If there's only one mole visible, it might re-select the same one, which is fine.
+                // Otherwise, try again to get a different hole.
+                return popRandomMole();
+            }
+
+            activeHole = newActiveHole;
+            activeHole.classList.add('up');
+
+            // Set a timer for the mole to disappear
+            const popTime = Math.random() * 1000 + 500; // Mole stays up for 0.5s to 1.5s
+            moleTimer = setTimeout(() => {
+                if (activeHole) {
+                    activeHole.classList.remove('up');
+                }
+                if (gameActive) {
+                    popRandomMole(); // Pop another mole if game is still active
+                }
+            }, popTime);
+        };
+
+        // Event Listeners for Game Buttons
+        startButton.addEventListener('click', startGame);
+        stopButton.addEventListener('click', stopGame);
+
+        // Add click listeners to holes
+        holes.forEach(hole => {
+            hole.addEventListener('click', () => {
+                if (!gameActive) {
+                    gameMessage.textContent = "Click Start to begin the game!";
+                    return;
+                }
+                if (hole === activeHole) {
+                    currentScore++;
+                    scoreDisplay.textContent = currentScore;
+                    gameMessage.textContent = "Hit!";
+                    // Clear the current mole's timer and immediately pop a new one
+                    if (moleTimer) clearTimeout(moleTimer);
+                    activeHole.classList.remove('up');
+                    activeHole = null; // Clear active hole immediately after hit
+                    popRandomMole();
+                } else {
+                    gameMessage.textContent = "Miss!";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
