@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Code Editor</title>
+    <title>Code Canvas - Professional Editor</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- CodeMirror CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
     <!-- CodeMirror Theme (Dracula theme - modern dark) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
-    <!-- CodeMirror Addons (e.g., fullscreen, search/replace for professional feel) -->
+    <!-- CodeMirror Addons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/display/fullscreen.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/matchesonscrollbar.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/lint/lint.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/dialog/dialog.min.css">
 
 
     <style>
@@ -23,171 +26,247 @@
             html { font-family: 'Inter var', sans-serif; }
         }
 
-        /* Base styles for body */
+        /* Base styles for body - Darker theme */
         body {
-            background-color: #f8fafc; /* Lighter background */
+            background-color: #1e1e1e; /* VSCode-like dark background */
             display: flex;
-            flex-direction: column; /* Stack header and main content */
+            flex-direction: column;
             justify-content: flex-start;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
             box-sizing: border-box;
+            color: #d4d4d4; /* Default text color for dark theme */
+            overflow: hidden; /* Prevent body scrollbar */
         }
 
-        /* Main application header */
+        /* Main application header - Simplified */
         .app-header {
-            width: 95%;
+            width: 100%; /* Take full width within parent */
             max-width: 1200px;
             text-align: center;
-            margin-bottom: 30px; /* More space below header */
+            margin-bottom: 20px; /* Reduced margin */
             padding-bottom: 10px;
-            border-bottom: 1px solid #e2e8f0; /* Subtle separator */
+            /* border-bottom: 1px solid #333333; */ /* Removed explicit border to integrate better */
+        }
+        .app-header h1 {
+            color: #ffffff;
+            font-size: 2.5rem; /* Slightly smaller header */
+            font-weight: 700; /* Bold */
+        }
+        .app-header p {
+            color: #a0a0a0;
+            font-size: 1rem; /* Smaller tagline */
         }
 
         .container {
             width: 95%;
             max-width: 1200px;
+            height: calc(100vh - 120px); /* Calculate height to fit viewport, leaving space for header/padding */
             display: grid;
             grid-template-columns: 1fr;
-            gap: 24px; /* Increased gap for more breathing room */
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); /* Deeper shadow */
-            border-radius: 16px; /* More rounded corners */
-            overflow: hidden;
-            background-color: #ffffff;
-            padding: 30px; /* Increased padding inside container */
+            /* Removed gap, using negative margins/borders for seamless look */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            border-radius: 8px; /* Slightly less rounded for a tighter fit */
+            overflow: hidden; /* Crucial for containing inner elements with borders */
+            background-color: #252526; /* VSCode-like panel background */
+            border: 1px solid #3c3c3c;
+            position: relative; /* For z-index of panels if needed */
         }
 
         @media (min-width: 768px) {
             .container {
                 grid-template-columns: 1fr 1fr;
+                grid-template-rows: 1fr; /* Ensure rows are equal height */
             }
         }
 
-        .code-section, .output-section {
+        .editor-panel, .output-panel {
             display: flex;
             flex-direction: column;
-            background-color: #fefefe; /* Very light background for sections */
-            border-radius: 10px; /* Slightly more rounded sections */
-            padding: 20px; /* Increased padding in sections */
-            border: 1px solid #eef2f6; /* Lighter, more subtle border */
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
-        }
-
-        /* CodeMirror editor styling refinement */
-        .CodeMirror {
-            border: 1px solid #cbd5e1;
-            border-radius: 8px; /* Consistent rounding with sections */
-            font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
-            font-size: 0.95rem; /* Slightly larger font */
-            line-height: 1.6; /* Improved line spacing */
-            height: 450px; /* Slightly increased height */
-            flex-grow: 1;
+            background-color: #1e1e1e; /* VSCode editor background */
+            /* No direct padding or borders here, let inner elements define it */
+            border-radius: 0; /* No rounding, corners are on the container */
             overflow: hidden;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Inner shadow for depth */
-        }
-        /* Override CodeMirror's default background to match theme for professional look */
-        .CodeMirror-wrap {
-            background-color: #282a36 !important; /* Dracula theme background */
+            height: 100%; /* Occupy full height of parent */
         }
 
-        /* Output console styling refinement */
+        /* Specific border for the separator in desktop view */
+        @media (min-width: 768px) {
+            .editor-panel {
+                border-right: 1px solid #3c3c3c; /* Separator between editor and output */
+            }
+        }
+        @media (max-width: 767px) {
+             .editor-panel {
+                border-bottom: 1px solid #3c3c3c; /* Separator between editor and output on mobile */
+            }
+        }
+
+
+        /* CodeMirror editor styling to resemble VSCode */
+        .CodeMirror {
+            border: none; /* No border for the editor itself */
+            border-radius: 0; /* No rounding, controlled by panel/container */
+            font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            height: 100%; /* Fill available space within panel */
+            flex-grow: 1; /* Allow CodeMirror to grow */
+            overflow: hidden;
+            background-color: #1e1e1e !important; /* Force Dracula theme background */
+            padding-bottom: 0; /* Ensure no extra padding at bottom of editor area */
+        }
+        .CodeMirror-gutters {
+            background-color: #252526 !important; /* VSCode gutter background */
+            border-right: 1px solid #3c3c3c !important; /* Gutter separator */
+        }
+        .CodeMirror-linenumber {
+            color: #858585 !important; /* Line number color */
+        }
+        .CodeMirror-cursor {
+            border-left: 1.5px solid #ffffff !important; /* White block cursor like VSCode */
+        }
+        .CodeMirror-selected {
+            background-color: #364966 !important; /* VSCode selection color */
+        }
+        .CodeMirror-focused .CodeMirror-selected {
+            background-color: #364966 !important; /* Consistent selection */
+        }
+        .CodeMirror-activeline-background {
+            background: #323232 !important; /* Active line background */
+        }
+        /* Custom Scrollbar for CodeMirror (Webkit only for simplicity) */
+        .CodeMirror-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .CodeMirror-scroll::-webkit-scrollbar-track {
+            background: #252526;
+            border-radius: 4px;
+        }
+        .CodeMirror-scroll::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+        .CodeMirror-scroll::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Terminal/Output area */
         #output {
-            min-height: 250px; /* Increased min height for output */
-            background-color: #1a202c; /* Deeper dark background */
-            color: #e0e7ff; /* Lighter, more vibrant text color */
-            padding: 20px;
-            border-radius: 8px;
+            background-color: #1a1a1a; /* Even darker for terminal-like output */
+            color: #d4d4d4;
+            padding: 15px; /* Slightly less padding to feel more like a terminal */
+            border-radius: 0; /* No rounding */
             overflow-y: auto;
             flex-grow: 1;
             font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+            height: 100%; /* Fill available space within panel */
+        }
+
+        /* Control Panel at the bottom of the editor section */
+        .control-panel {
+            background-color: #252526; /* Match container/gutter background */
+            padding: 12px 20px; /* Padding for the controls */
+            border-top: 1px solid #3c3c3c; /* Separator from editor */
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-shrink: 0; /* Prevent panel from shrinking */
         }
 
         /* Library input styling refinement */
         #library-url {
             font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            padding: 10px 12px; /* More padding */
-            border-radius: 6px;
-            border: 1px solid #d1d5db; /* Softer border */
-            background-color: #fefefe;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
+            font-size: 0.9rem;
+            padding: 8px 10px; /* Smaller padding for a more compact look */
+            border-radius: 4px; /* More subtle rounding */
+            border: 1px solid #3c3c3c;
+            background-color: #333333;
+            color: #d4d4d4;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        #library-url::placeholder {
+            color: #858585;
         }
         #library-url:focus {
-            border-color: #6366f1; /* Indigo focus ring */
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); /* Softer focus shadow */
+            border-color: #007acc;
+            box-shadow: 0 0 0 1px #007acc;
         }
 
-        /* Button styling (Tailwind classes will handle most of this, but custom effects here) */
-        .gradient-button {
-            background-image: linear-gradient(to right, #4f46e5 0%, #6366f1 51%, #4f46e5 100%);
-            text-align: center;
-            text-transform: uppercase;
-            transition: 0.5s;
-            background-size: 200% auto;
+        /* Button styling - consistent with VSCode actions */
+        .action-button {
+            background-color: #007acc;
             color: white;
-            box-shadow: 0 4px 15px -5px rgba(76, 56, 203, 0.75);
+            font-weight: 600;
+            padding: 8px 16px; /* Smaller buttons */
+            border-radius: 4px; /* More subtle rounding */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.2s ease, transform 0.1s ease;
             border: none;
+            width: 100%; /* Full width within control panel */
         }
 
-        .gradient-button:hover {
-            background-position: right center; /* change the direction of the change here */
-            box-shadow: 0 4px 20px -5px rgba(76, 56, 203, 0.75);
+        .action-button:hover {
+            background-color: #0060a0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
-        /* Status messages */
+        .action-button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        /* Library button specific styling */
+        .library-button {
+            background-color: #6a0dad;
+        }
+        .library-button:hover {
+            background-color: #5a0ca0;
+        }
+
+        /* Status messages - tightly integrated */
         #library-status {
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            margin-top: 10px;
+            padding: 6px 10px; /* Reduced padding */
+            border-radius: 4px;
+            font-size: 0.75rem; /* Even smaller font */
+            margin-top: 5px; /* Reduced margin */
             border: 1px solid transparent;
+            color: #d4d4d4;
+            text-align: center; /* Center align status text */
         }
-        .text-red-600 { background-color: #fee2e2; border-color: #ef4444; color: #dc2626; }
-        .text-yellow-600 { background-color: #fffbeb; border-color: #f59e0b; color: #d97706; }
-        .text-blue-600 { background-color: #eff6ff; border-color: #3b82f6; color: #2563eb; }
-        .text-green-600 { background-color: #ecfdf5; border-color: #10b981; color: #059669; }
+        .text-red-600 { background-color: #4a1e1e; border-color: #8b0000; color: #ff8888; }
+        .text-yellow-600 { background-color: #4a4a1e; border-color: #8b8b00; color: #ffff88; }
+        .text-blue-600 { background-color: #1a2a4a; border-color: #004080; color: #aaddff; }
+        .text-green-600 { background-color: #1e4a1e; border-color: #008000; color: #aaffaa; }
 
     </style>
 </head>
-<body class="bg-gray-50 p-8">
+<body class="bg-gray-900">
     <header class="app-header">
-        <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Code Canvas</h1>
-        <p class="text-lg text-gray-600">Edit, Run, and Explore JavaScript in Your Browser</p>
+        <h1 class="text-4xl font-extrabold text-white">Code Canvas</h1>
+        <p class="text-lg text-gray-400">Browser-based JavaScript IDE</p>
     </header>
 
-    <div class="container bg-white rounded-2xl shadow-xl p-8">
-        <!-- Code Editor and Library Section -->
-        <div class="code-section">
-            <h2 class="text-2xl font-semibold mb-5 text-gray-800">Your Code</h2>
-            <!-- CodeMirror will initialize on this textarea -->
-            <textarea id="code-editor" class="rounded-lg shadow-sm"></textarea>
-
-            <button id="run-button"
-                class="mt-6 px-8 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-300 ease-in-out transform hover:-translate-y-0.5 gradient-button">
-                Run Code
-            </button>
-
-            <!-- Library Loading Section -->
-            <div class="mt-8 p-5 bg-gray-100 rounded-xl border border-gray-200 shadow-inner">
-                <h3 class="text-xl font-semibold mb-4 text-gray-700">Load External Library</h3>
-                <input type="text" id="library-url" placeholder="e.g., https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"
-                    class="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out mb-3">
-                <button id="load-library-button"
-                    class="px-6 py-2.5 bg-purple-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-300 transition duration-300 ease-in-out gradient-button">
-                    Load Library
-                </button>
-                <div id="library-status" class="mt-4 text-sm text-gray-600"></div>
+    <div class="container">
+        <!-- Editor Panel -->
+        <div class="editor-panel">
+            <textarea id="code-editor"></textarea>
+            <div class="control-panel">
+                <button id="run-button" class="action-button">Run Code</button>
+                <input type="text" id="library-url" placeholder="Paste library URL (e.g., d3.min.js)" class="w-full">
+                <button id="load-library-button" class="action-button library-button">Load Library</button>
+                <div id="library-status"></div>
             </div>
         </div>
 
-        <!-- Output Section -->
-        <div class="output-section">
-            <h2 class="text-2xl font-semibold mb-5 text-gray-800">Output Console</h2>
-            <pre id="output" class="rounded-lg shadow-inner"></pre>
+        <!-- Output Panel -->
+        <div class="output-panel">
+            <pre id="output"></pre>
         </div>
     </div>
 
@@ -201,7 +280,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/matchesonscrollbar.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/jump-to-line.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/dialog/dialog.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/dialog/dialog.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/javascript-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/lint/lint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/lint/javascript-lint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/keymap/sublime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jshint/2.13.5/jshint.min.js"></script> <!-- Required for javascript-lint -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/brace-fold.min.js"></script>
 
 
     <script>
@@ -215,69 +302,87 @@
 
         // Initialize CodeMirror editor
         const editor = CodeMirror.fromTextArea(codeEditorElement, {
-            mode: 'javascript',        // Set mode to JavaScript for syntax highlighting
-            theme: 'dracula',          // Use the Dracula theme for styling
-            lineNumbers: true,         // Show line numbers
-            indentUnit: 2,             // 2 spaces for indentation
-            tabSize: 2,                // 2 spaces per tab
-            lineWrapping: true,        // Wrap long lines
-            autoCloseBrackets: true,   // Automatically close brackets/quotes
-            matchBrackets: true,       // Highlight matching brackets
-            // Add more CodeMirror options for professional feel
+            mode: 'javascript',
+            theme: 'dracula',
+            lineNumbers: true,
+            indentUnit: 2,
+            tabSize: 2,
+            lineWrapping: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
             extraKeys: {
-                "F11": function(cm) { // Fullscreen toggle
+                "F11": function(cm) {
                     cm.setOption("fullScreen", !cm.getOption("fullScreen"));
                 },
-                "Esc": function(cm) { // Exit fullscreen
+                "Esc": function(cm) {
                     if (cm.getOption("fullScreen")) cm.setOption("fullScreen", false);
                 },
-                "Ctrl-Q": function(cm){ // Collapse/expand all folds
+                "Ctrl-Space": "autocomplete",
+                "Ctrl-Q": function(cm){
                     cm.foldCode(cm.getCursor());
                 }
             },
+            keyMap: "sublime",
             foldGutter: true,
-            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-            value: `console.log('Welcome to the Professional Code Canvas!');
+            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+            lint: true,
+            hintOptions: { hint: CodeMirror.hint.javascript, completeSingle: false },
+            value: `// Welcome to the Code Canvas!
+// This environment offers a VSCode-like experience directly in your browser.
 
-// This editor uses CodeMirror for advanced features.
-// Try F11 for fullscreen, Ctrl+F for search.
+// Editor Features:
+// - VSCode-like Dark Theme (Dracula)
+// - Line Numbers & Syntax Highlighting
+// - Bracket Matching & Auto-closing
+// - Autocompletion (Ctrl+Space or auto-trigger after typing a period for objects)
+// - Linting (errors/warnings highlighted in the gutter)
+// - Fullscreen Mode (F11)
+// - Search & Replace (Ctrl+F)
+// - Sublime Text Keymap (e.g., Ctrl+D to select next occurrence)
 
-function factorial(n) {
+function calculateFactorial(n) {
   if (n === 0 || n === 1) {
     return 1;
   }
-  return n * factorial(n - 1);
+  return n * calculateFactorial(n - 1);
 }
 
-console.log('Factorial of 5:', factorial(5));
+console.log('Factorial of 7:', calculateFactorial(7));
 
-// Load a library like Lodash (https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js)
-// Then use it: console.log(_.chunk(['a', 'b', 'c', 'd'], 2));
+// To load an external library:
+// 1. Paste its CDN URL in the input field below.
+// 2. Click 'Load Library'.
+// Example: Lodash (https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js)
+// Then use it: console.log('Debounced function:', _.debounce(() => {}, 100));
+
+// Example of an intentional linting warning:
+var i = 0; // 'var' is often discouraged in modern JavaScript; consider 'const' or 'let'.
+if (i == '0') { // Use '===' for strict equality to avoid type coercion issues.
+    console.log('Loose equality check warning.');
+}
 `
         });
 
         // --- Code Execution Logic ---
         runButton.addEventListener('click', () => {
-            const codeToExecute = editor.getValue(); // Get code from CodeMirror
+            const codeToExecute = editor.getValue();
             outputConsole.textContent = ''; // Clear previous output
 
-            // Store original console methods
             const originalConsoleLog = console.log;
             const originalConsoleError = console.error;
 
-            // Redirect console.log and console.error to our output console
             console.log = (...args) => {
                 outputConsole.textContent += args.map(arg => {
                     if (typeof arg === 'object' && arg !== null) {
                         try {
                             return JSON.stringify(arg, null, 2);
                         } catch (e) {
-                            return String(arg); // Fallback for circular references or complex objects
+                            return String(arg);
                         }
                     }
                     return String(arg);
                 }).join(' ') + '\n';
-                originalConsoleLog(...args); // Also log to the browser's console
+                originalConsoleLog(...args);
             };
             console.error = (...args) => {
                 outputConsole.textContent += 'ERROR: ' + args.map(arg => {
@@ -290,17 +395,16 @@ console.log('Factorial of 5:', factorial(5));
                     }
                     return String(arg);
                 }).join(' ') + '\n';
-                originalConsoleError(...args); // Also log to the browser's console
+                originalConsoleError(...args);
             };
 
             try {
-                // Create a function wrapper to execute the code safely
+                // Execute the code in a function wrapper
                 const executableFunction = new Function(codeToExecute);
-                executableFunction(); // Execute the code
+                executableFunction();
             } catch (error) {
                 console.error('Execution Error:', error);
             } finally {
-                // Restore original console methods after a short delay to ensure all async logs are captured
                 setTimeout(() => {
                     console.log = originalConsoleLog;
                     console.error = originalConsoleError;
@@ -317,7 +421,6 @@ console.log('Factorial of 5:', factorial(5));
                 return;
             }
 
-            // Check if the script is already loaded to prevent duplicates
             const existingScripts = document.querySelectorAll(`script[src="${libraryUrl}"]`);
             if (existingScripts.length > 0) {
                 libraryStatus.textContent = 'Library already loaded.';
@@ -330,12 +433,12 @@ console.log('Factorial of 5:', factorial(5));
 
             const script = document.createElement('script');
             script.src = libraryUrl;
-            script.async = true; // Load asynchronously
+            script.async = true;
 
             script.onload = () => {
                 libraryStatus.textContent = `Library "${libraryUrl.split('/').pop()}" loaded successfully!`;
                 libraryStatus.className = 'mt-3 text-sm text-green-600';
-                libraryUrlInput.value = ''; // Clear the input field
+                libraryUrlInput.value = '';
             };
 
             script.onerror = (e) => {
@@ -346,6 +449,18 @@ console.log('Factorial of 5:', factorial(5));
 
             document.head.appendChild(script);
         });
+
+        // Add auto-completion trigger on dot for properties and general input
+        editor.on("inputRead", function(cm, change) {
+            // Trigger autocomplete on '.' or if the change is a single character input that's a word character or '$'
+            if (change.text[0] === "." || (change.origin === "+input" && /[\w$]$/.test(change.text[0]))) {
+                CodeMirror.commands.autocomplete(cm, null, { completeSingle: false });
+            }
+        });
+
+        // Initial setup for CodeMirror to take full height
+        // This is important because CodeMirror needs its container to have a defined height
+        editor.setSize(null, '100%');
     </script>
 </body>
 </html>
