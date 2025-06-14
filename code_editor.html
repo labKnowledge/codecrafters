@@ -219,8 +219,8 @@
         }
 
 
-        /* Library input styling */
-        #library-url {
+        /* Input styling */
+        .api-key-input, #library-url {
             font-family: 'Inter', sans-serif;
             font-size: 0.85rem;
             padding: 7px 10px;
@@ -231,16 +231,16 @@
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
             width: 100%;
         }
-        #library-url::placeholder {
+        .api-key-input::placeholder, #library-url::placeholder {
             color: #858585;
         }
-        #library-url:focus {
+        .api-key-input:focus, #library-url:focus {
             border-color: #007acc;
             box-shadow: 0 0 0 1px #007acc;
         }
 
-        /* Load Library Button */
-        #load-library-button {
+        /* Button styling */
+        #load-library-button, #save-api-key-button {
             background-color: #6a0dad;
             color: white;
             font-weight: 500;
@@ -251,18 +251,18 @@
             border: none;
             width: 100%;
         }
-        #load-library-button:hover {
+        #load-library-button:hover, #save-api-key-button:hover {
             background-color: #5a0ca0;
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-        #load-library-button:active {
+        #load-library-button:active, #save-api-key-button:active {
             transform: translateY(0);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
         /* Status messages */
-        #library-status {
+        #library-status, #api-key-status {
             padding: 6px 10px;
             border-radius: 4px;
             font-size: 0.7rem;
@@ -343,6 +343,14 @@
 
         <!-- Library Control Panel (Initially Hidden) -->
         <div id="library-control-panel" class="library-control-panel">
+            <!-- Gemini API Key Section -->
+            <div class="api-key-section pb-4 mb-4 border-b border-gray-600">
+                <h4 class="text-white text-sm font-semibold mb-2">Gemini API Key</h4>
+                <input type="password" id="gemini-api-key-input" placeholder="Enter your Gemini API Key" class="api-key-input mb-2">
+                <button id="save-api-key-button">Save API Key</button>
+                <div id="api-key-status" class="mt-2"></div>
+            </div>
+
             <h3 class="text-white text-md font-semibold mb-2">Load External Library</h3>
             <input type="text" id="library-url" placeholder="Paste library URL (e.g., d3.min.js)">
             <button id="load-library-button">Load Library</button>
@@ -406,7 +414,16 @@
         const mainContainer = document.getElementById('main-container');
         const loadedLibrariesList = document.getElementById('loaded-libraries-list');
         const explainCodeButton = document.getElementById('explain-code-button');
-        const generateCodeButton = document.getElementById('generate-code-button'); // New: Generate Code button
+        const generateCodeButton = document.getElementById('generate-code-button');
+
+        // New API key related elements
+        const geminiApiKeyInput = document.getElementById('gemini-api-key-input');
+        const saveApiKeyButton = document.getElementById('save-api-key-button');
+        const apiKeyStatus = document.getElementById('api-key-status');
+
+        // Global variable to store Gemini API Key
+        let geminiApiKey = '';
+        const GEMINI_API_KEY_STORAGE_KEY = 'gemini-api-key'; // Key for localStorage
 
         // Array to store loaded library URLs
         const loadedLibraries = [];
@@ -465,10 +482,24 @@ console.log(greet('Engineers'));
 // Example: Lodash (https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js)
 // Then use it: console.log('Lodash is array:', _.isArray([]));
 
-// Highlight the comment below and click the '<i class="fas fa-code"></i>' button to generate code!
+// Highlight the comment below and click the 'Code' icon (next to magic wand) to generate code!
 // Function to add two numbers
 `
         });
+
+        // Function to load API key from localStorage on startup
+        function loadApiKey() {
+            const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
+            if (storedKey) {
+                geminiApiKey = storedKey;
+                geminiApiKeyInput.value = storedKey; // Pre-fill the input
+                apiKeyStatus.textContent = 'API Key loaded.';
+                apiKeyStatus.className = 'mt-2 text-sm text-green-600';
+            } else {
+                apiKeyStatus.textContent = 'No API Key saved. Using default if available.';
+                apiKeyStatus.className = 'mt-2 text-sm text-yellow-600';
+            }
+        }
 
         // Function to render the list of loaded libraries
         function renderLoadedLibraries() {
@@ -490,7 +521,8 @@ console.log(greet('Engineers'));
             }
         }
 
-        // Initial render of loaded libraries
+        // Initial calls on page load
+        loadApiKey();
         renderLoadedLibraries();
 
         // --- Code Execution Logic ---
@@ -501,7 +533,6 @@ console.log(greet('Engineers'));
             const originalConsoleLog = console.log;
             const originalConsoleError = console.error;
 
-            // Fix for flatMap error: Manually convert args to string and join
             console.log = (...args) => {
                 const message = args.map(arg => {
                     if (typeof arg === 'object' && arg !== null) {
@@ -560,8 +591,9 @@ console.log(greet('Engineers'));
             let chatHistory = [];
             chatHistory.push({ role: "user", parts: [{ text: prompt }] });
             const payload = { contents: chatHistory };
-            const apiKey = ""; // Canvas runtime provides this for gemini-2.0-flash
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // Use the globally stored API key, if available. Canvas runtime provides for gemini-2.0-flash by default.
+            const currentApiKey = geminiApiKey || "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${currentApiKey}`;
 
             try {
                 const response = await fetch(apiUrl, {
@@ -594,7 +626,6 @@ console.log(greet('Engineers'));
                 return;
             }
 
-            // Simple check if it looks like a comment. For full robustness, CodeMirror's token info would be better.
             const isComment = selectedText.startsWith('//') || selectedText.startsWith('/*');
             if (!isComment) {
                 outputConsole.textContent = 'Please highlight a comment (starting with // or /*) to generate code.';
@@ -609,8 +640,9 @@ console.log(greet('Engineers'));
             let chatHistory = [];
             chatHistory.push({ role: "user", parts: [{ text: prompt }] });
             const payload = { contents: chatHistory };
-            const apiKey = ""; // Canvas runtime provides this for gemini-2.0-flash
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // Use the globally stored API key, if available. Canvas runtime provides for gemini-2.0-flash by default.
+            const currentApiKey = geminiApiKey || "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${currentApiKey}`;
 
             try {
                 const response = await fetch(apiUrl, {
@@ -643,10 +675,6 @@ console.log(greet('Engineers'));
                     // We also add an extra newline for better formatting
                     editor.replaceRange('\n' + generatedCode + '\n', {line: line, ch: ch});
                     outputConsole.textContent = 'Code generated successfully!';
-
-                    // Auto-indent the newly inserted code (optional, but good for UX)
-                    // This is a bit tricky with CodeMirror for specific ranges, but we can re-indent the current view
-                    // Or more simply, let the user trigger auto-indent (e.g., Ctrl+K Ctrl+F)
 
                 } else {
                     outputConsole.textContent = 'ERROR: Could not generate code from LLM. Response structure unexpected.';
@@ -699,6 +727,25 @@ console.log(greet('Engineers'));
             document.head.appendChild(script);
         });
 
+        // --- API Key Save Logic ---
+        saveApiKeyButton.addEventListener('click', () => {
+            const key = geminiApiKeyInput.value.trim();
+            if (key) {
+                localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
+                geminiApiKey = key; // Update the global variable
+                apiKeyStatus.textContent = 'API Key saved successfully!';
+                apiKeyStatus.className = 'mt-2 text-sm text-green-600';
+            } else {
+                localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY); // Clear key if input is empty
+                geminiApiKey = ''; // Clear the global variable
+                apiKeyStatus.textContent = 'API Key cleared. Using default if available.';
+                apiKeyStatus.className = 'mt-2 text-sm text-yellow-600';
+            }
+            // Close the library panel after saving/clearing key for better UX
+            libraryControlPanel.classList.remove('active');
+        });
+
+
         // --- UI Interaction Logic ---
         toolsButton.addEventListener('click', (event) => {
             libraryControlPanel.classList.toggle('active');
@@ -740,7 +787,7 @@ console.log(greet('Engineers'));
         editor.on("cursorActivity", () => {
             const selectedText = editor.getSelection();
             // Enable generateCodeButton if selection is not empty and appears to be a comment
-            const isComment = selectedText.startsWith('//') || selectedText.startsWith('/*');
+            const isComment = selectedText.startsWith('//') || selectedText.startsWith('/*') || selectedText.startsWith('*'); // Also consider * for multi-line comments
             generateCodeButton.disabled = !selectedText.trim() || !isComment;
         });
 
