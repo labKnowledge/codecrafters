@@ -3,47 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Browser Code Editor</title>
+    <title>Professional Code Editor</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- CodeMirror CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
-    <!-- CodeMirror Theme (Dracula theme for a dark, readable editor) -->
+    <!-- CodeMirror Theme (Dracula theme - modern dark) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+    <!-- CodeMirror Addons (e.g., fullscreen, search/replace for professional feel) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/display/fullscreen.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/matchesonscrollbar.min.css">
+
 
     <style>
-        /* Inter font for a modern look */
+        /* Inter font for a modern, professional look */
         @import url('https://rsms.me/inter/inter.css');
         html { font-family: 'Inter', sans-serif; }
         @supports (font-variation-settings: normal) {
             html { font-family: 'Inter var', sans-serif; }
         }
 
-        /* Custom styles for the editor and output */
+        /* Base styles for body */
         body {
-            background-color: #f0f2f5; /* Light grey background */
+            background-color: #f8fafc; /* Lighter background */
             display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Align items to the top */
-            min-height: 100vh; /* Full viewport height */
-            padding: 20px; /* Padding around the content */
+            flex-direction: column; /* Stack header and main content */
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
             box-sizing: border-box;
         }
 
-        .container {
-            width: 95%; /* Adjust width for better responsiveness */
-            max-width: 1200px; /* Max width for desktop */
-            display: grid;
-            grid-template-columns: 1fr; /* Single column for mobile */
-            gap: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            overflow: hidden; /* Ensure rounded corners clip content */
-            background-color: #ffffff;
-            padding: 20px;
+        /* Main application header */
+        .app-header {
+            width: 95%;
+            max-width: 1200px;
+            text-align: center;
+            margin-bottom: 30px; /* More space below header */
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0; /* Subtle separator */
         }
 
-        @media (min-width: 768px) { /* Two columns for tablet and desktop */
+        .container {
+            width: 95%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px; /* Increased gap for more breathing room */
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); /* Deeper shadow */
+            border-radius: 16px; /* More rounded corners */
+            overflow: hidden;
+            background-color: #ffffff;
+            padding: 30px; /* Increased padding inside container */
+        }
+
+        @media (min-width: 768px) {
             .container {
                 grid-template-columns: 1fr 1fr;
             }
@@ -52,81 +67,126 @@
         .code-section, .output-section {
             display: flex;
             flex-direction: column;
-            background-color: #f9fafb; /* Lighter background for sections */
-            border-radius: 8px;
-            padding: 15px;
-            border: 1px solid #e2e8f0; /* Light border */
+            background-color: #fefefe; /* Very light background for sections */
+            border-radius: 10px; /* Slightly more rounded sections */
+            padding: 20px; /* Increased padding in sections */
+            border: 1px solid #eef2f6; /* Lighter, more subtle border */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
         }
 
-        /* Styles for the CodeMirror editor */
+        /* CodeMirror editor styling refinement */
         .CodeMirror {
-            border: 1px solid #cbd5e1; /* Subtle border for the editor */
-            border-radius: 6px;
-            font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace; /* Monospace font */
-            font-size: 0.95rem;
-            line-height: 1.5;
-            height: 400px; /* Fixed height for the editor */
+            border: 1px solid #cbd5e1;
+            border-radius: 8px; /* Consistent rounding with sections */
+            font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 0.95rem; /* Slightly larger font */
+            line-height: 1.6; /* Improved line spacing */
+            height: 450px; /* Slightly increased height */
             flex-grow: 1;
-            overflow: hidden; /* Ensure content is clipped within rounded corners */
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Inner shadow for depth */
+        }
+        /* Override CodeMirror's default background to match theme for professional look */
+        .CodeMirror-wrap {
+            background-color: #282a36 !important; /* Dracula theme background */
         }
 
-        .CodeMirror-scroll {
-            /* Adjust scroll behavior if needed, usually fine by default */
-        }
-
-        .CodeMirror-gutters {
-            border-radius: 6px 0 0 6px; /* Rounded corners only on the left for gutters */
-        }
-
-        /* Output console styles */
+        /* Output console styling refinement */
         #output {
-            min-height: 200px; /* Minimum height for output */
-            white-space: pre-wrap; /* Preserve whitespace and wrap text */
-            word-break: break-word; /* Break long words */
-            background-color: #1e293b; /* Dark background for output console */
-            color: #e2e8f0; /* Light text for output console */
-            padding: 15px;
+            min-height: 250px; /* Increased min height for output */
+            background-color: #1a202c; /* Deeper dark background */
+            color: #e0e7ff; /* Lighter, more vibrant text color */
+            padding: 20px;
             border-radius: 8px;
-            overflow-y: auto; /* Scroll for long output */
+            overflow-y: auto;
             flex-grow: 1;
+            font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        /* Style for library input */
+        /* Library input styling refinement */
         #library-url {
             font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            padding: 10px 12px; /* More padding */
+            border-radius: 6px;
+            border: 1px solid #d1d5db; /* Softer border */
+            background-color: #fefefe;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
         }
+        #library-url:focus {
+            border-color: #6366f1; /* Indigo focus ring */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); /* Softer focus shadow */
+        }
+
+        /* Button styling (Tailwind classes will handle most of this, but custom effects here) */
+        .gradient-button {
+            background-image: linear-gradient(to right, #4f46e5 0%, #6366f1 51%, #4f46e5 100%);
+            text-align: center;
+            text-transform: uppercase;
+            transition: 0.5s;
+            background-size: 200% auto;
+            color: white;
+            box-shadow: 0 4px 15px -5px rgba(76, 56, 203, 0.75);
+            border: none;
+        }
+
+        .gradient-button:hover {
+            background-position: right center; /* change the direction of the change here */
+            box-shadow: 0 4px 20px -5px rgba(76, 56, 203, 0.75);
+        }
+
+        /* Status messages */
+        #library-status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            border: 1px solid transparent;
+        }
+        .text-red-600 { background-color: #fee2e2; border-color: #ef4444; color: #dc2626; }
+        .text-yellow-600 { background-color: #fffbeb; border-color: #f59e0b; color: #d97706; }
+        .text-blue-600 { background-color: #eff6ff; border-color: #3b82f6; color: #2563eb; }
+        .text-green-600 { background-color: #ecfdf5; border-color: #10b981; color: #059669; }
+
     </style>
 </head>
-<body class="bg-gray-100 p-8">
-    <div class="container bg-white rounded-xl shadow-lg p-6">
+<body class="bg-gray-50 p-8">
+    <header class="app-header">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Code Canvas</h1>
+        <p class="text-lg text-gray-600">Edit, Run, and Explore JavaScript in Your Browser</p>
+    </header>
+
+    <div class="container bg-white rounded-2xl shadow-xl p-8">
         <!-- Code Editor and Library Section -->
         <div class="code-section">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Your Code</h2>
+            <h2 class="text-2xl font-semibold mb-5 text-gray-800">Your Code</h2>
             <!-- CodeMirror will initialize on this textarea -->
             <textarea id="code-editor" class="rounded-lg shadow-sm"></textarea>
 
             <button id="run-button"
-                class="mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 ease-in-out transform hover:scale-105">
+                class="mt-6 px-8 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-300 ease-in-out transform hover:-translate-y-0.5 gradient-button">
                 Run Code
             </button>
 
             <!-- Library Loading Section -->
-            <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-inner">
-                <h3 class="text-xl font-medium mb-3 text-gray-700">Load External Library</h3>
+            <div class="mt-8 p-5 bg-gray-100 rounded-xl border border-gray-200 shadow-inner">
+                <h3 class="text-xl font-semibold mb-4 text-gray-700">Load External Library</h3>
                 <input type="text" id="library-url" placeholder="e.g., https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"
-                    class="w-full p-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 transition duration-150 ease-in-out mb-2">
+                    class="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out mb-3">
                 <button id="load-library-button"
-                    class="px-5 py-2 bg-purple-600 text-white font-bold rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 transition duration-200 ease-in-out">
+                    class="px-6 py-2.5 bg-purple-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-300 transition duration-300 ease-in-out gradient-button">
                     Load Library
                 </button>
-                <div id="library-status" class="mt-3 text-sm text-gray-600"></div>
+                <div id="library-status" class="mt-4 text-sm text-gray-600"></div>
             </div>
         </div>
 
         <!-- Output Section -->
         <div class="output-section">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Output Console</h2>
+            <h2 class="text-2xl font-semibold mb-5 text-gray-800">Output Console</h2>
             <pre id="output" class="rounded-lg shadow-inner"></pre>
         </div>
     </div>
@@ -134,6 +194,15 @@
     <!-- CodeMirror JS Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+    <!-- CodeMirror Addons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/display/fullscreen.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/search.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/searchcursor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/matchesonscrollbar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/jump-to-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/dialog/dialog.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/dialog/dialog.min.css">
+
 
     <script>
         // Get references to DOM elements
@@ -154,20 +223,36 @@
             lineWrapping: true,        // Wrap long lines
             autoCloseBrackets: true,   // Automatically close brackets/quotes
             matchBrackets: true,       // Highlight matching brackets
-            value: `console.log('Hello from the new editor!');
+            // Add more CodeMirror options for professional feel
+            extraKeys: {
+                "F11": function(cm) { // Fullscreen toggle
+                    cm.setOption("fullScreen", !cm.getOption("fullScreen"));
+                },
+                "Esc": function(cm) { // Exit fullscreen
+                    if (cm.getOption("fullScreen")) cm.setOption("fullScreen", false);
+                },
+                "Ctrl-Q": function(cm){ // Collapse/expand all folds
+                    cm.foldCode(cm.getCursor());
+                }
+            },
+            foldGutter: true,
+            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+            value: `console.log('Welcome to the Professional Code Canvas!');
 
-// You can now write code and see it highlighted directly.
+// This editor uses CodeMirror for advanced features.
+// Try F11 for fullscreen, Ctrl+F for search.
 
-function greet(name) {
-  return 'Hello, ' + name + '!';
+function factorial(n) {
+  if (n === 0 || n === 1) {
+    return 1;
+  }
+  return n * factorial(n - 1);
 }
 
-console.log(greet('CodeMirror'));
+console.log('Factorial of 5:', factorial(5));
 
-// Try loading a library, e.g., moment.js for date manipulation:
-// https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js
-// Then use it in your code like:
-// console.log(moment().format('MMMM Do YYYY, h:mm:ss a'));
+// Load a library like Lodash (https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js)
+// Then use it: console.log(_.chunk(['a', 'b', 'c', 'd'], 2));
 `
         });
 
@@ -210,8 +295,6 @@ console.log(greet('CodeMirror'));
 
             try {
                 // Create a function wrapper to execute the code safely
-                // This isolates variables and prevents global pollution to some extent.
-                // However, it cannot prevent direct DOM manipulation or global API calls.
                 const executableFunction = new Function(codeToExecute);
                 executableFunction(); // Execute the code
             } catch (error) {
