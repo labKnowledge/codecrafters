@@ -27,6 +27,11 @@
             html { font-family: 'Inter var', sans-serif; }
         }
 
+        /* Define CSS variable for top action bar height */
+        :root {
+            --top-action-bar-height: 45px; /* Approximate height of the top bar */
+        }
+
         /* Base styles for body - Darker theme */
         body {
             background-color: #1e1e1e; /* VSCode-like dark background */
@@ -34,8 +39,8 @@
             flex-direction: column;
             justify-content: flex-start;
             align-items: center;
-            min-height: 100vh;
-            padding: 0; /* Remove body padding, let top-bar and container define spacing */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            padding: 0; /* Remove body padding */
             box-sizing: border-box;
             color: #d4d4d4; /* Default text color for dark theme */
             overflow: hidden; /* Prevent body scrollbar */
@@ -44,12 +49,13 @@
         /* Top Action Bar - Mimics VSCode's top menus/toolbar */
         .top-action-bar {
             width: 100%;
+            height: var(--top-action-bar-height); /* Fixed height */
             background-color: #252526; /* Darker than editor, lighter than body */
             border-bottom: 1px solid #3c3c3c;
             display: flex;
             justify-content: flex-end; /* Align items to the right by default */
             align-items: center;
-            padding: 8px 16px; /* Compact padding */
+            padding: 0 16px; /* Compact padding, height is now fixed */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
             z-index: 10; /* Ensure it stays on top */
             position: relative; /* For dropdown positioning */
@@ -81,14 +87,15 @@
 
         .container {
             width: 100%; /* Take full width */
-            flex-grow: 1; /* Occupy remaining vertical space */
+            /* Calculate height based on viewport height minus top bar height */
+            height: calc(100vh - var(--top-action-bar-height));
             display: grid;
             grid-template-columns: 1fr;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* Reduced shadow */
-            border-radius: 0; /* No rounding, seamless with top bar */
-            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            border-radius: 0;
+            overflow: hidden; /* Crucial: Container handles its own overflow by letting grid items fill it */
             background-color: #252526;
-            border: none; /* No outer border, top-bar handles top edge */
+            border: none;
         }
 
         @media (min-width: 768px) {
@@ -103,8 +110,8 @@
             flex-direction: column;
             background-color: #1e1e1e;
             border-radius: 0;
-            overflow: hidden;
-            height: 100%;
+            /* No overflow here, as CodeMirror and #output handle their own scrolling */
+            height: 100%; /* Fill parent container's height */
         }
 
         @media (min-width: 768px) {
@@ -125,9 +132,9 @@
             font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
             font-size: 0.9rem;
             line-height: 1.5;
-            height: 100%;
+            height: 100%; /* CodeMirror itself fills its panel */
             flex-grow: 1;
-            overflow: hidden;
+            overflow: hidden; /* CodeMirror's internal scroll handles overflow */
             background-color: #1e1e1e !important;
             padding-bottom: 0;
         }
@@ -173,48 +180,48 @@
             color: #d4d4d4;
             padding: 15px;
             border-radius: 0;
-            overflow-y: auto;
+            overflow-y: auto; /* This element will scroll its content */
             flex-grow: 1;
             font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
             font-size: 0.9rem;
             line-height: 1.5;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-            height: 100%;
+            height: 100%; /* Fill panel's height */
         }
 
         /* Control Panel for Library - Initially hidden */
         .library-control-panel {
-            position: absolute; /* Position relative to top-action-bar */
-            top: 100%; /* Below the top-action-bar */
+            position: absolute;
+            top: var(--top-action-bar-height); /* Position right below the top action bar */
             right: 0;
-            background-color: #2d2d2d; /* Slightly lighter than top bar */
+            background-color: #2d2d2d;
             border: 1px solid #3c3c3c;
             border-top: none;
-            border-radius: 0 0 8px 8px; /* Only bottom corners rounded */
+            border-radius: 0 0 8px 8px;
             padding: 15px;
-            width: 300px; /* Fixed width for the dropdown */
+            width: 300px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            display: none; /* Hidden by default */
+            display: none;
             flex-direction: column;
             gap: 10px;
-            z-index: 20; /* Above everything else */
+            z-index: 20;
         }
         .library-control-panel.active {
-            display: flex; /* Show when active */
+            display: flex;
         }
 
 
         /* Library input styling */
         #library-url {
             font-family: 'Inter', sans-serif;
-            font-size: 0.85rem; /* Smaller font for input */
+            font-size: 0.85rem;
             padding: 7px 10px;
             border-radius: 4px;
             border: 1px solid #3c3c3c;
             background-color: #333333;
             color: #d4d4d4;
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
-            width: 100%; /* Full width in panel */
+            width: 100%;
         }
         #library-url::placeholder {
             color: #858585;
@@ -226,9 +233,9 @@
 
         /* Load Library Button */
         #load-library-button {
-            background-color: #6a0dad; /* Distinct purple */
+            background-color: #6a0dad;
             color: white;
-            font-weight: 500; /* Medium weight */
+            font-weight: 500;
             padding: 8px 15px;
             border-radius: 4px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -250,7 +257,7 @@
         #library-status {
             padding: 6px 10px;
             border-radius: 4px;
-            font-size: 0.7rem; /* Even smaller */
+            font-size: 0.7rem;
             margin-top: 5px;
             border: 1px solid transparent;
             color: #d4d4d4;
