@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Code Editor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <!-- CodeMirror Theme (Dracula theme for a dark, readable editor) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+
+    <style>
+        /* Inter font for a modern look */
+        @import url('https://rsms.me/inter/inter.css');
+        html { font-family: 'Inter', sans-serif; }
+        @supports (font-variation-settings: normal) {
+            html { font-family: 'Inter var', sans-serif; }
+        }
+
+        /* Custom styles for the editor and output */
+        body {
+            background-color: #f0f2f5; /* Light grey background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top */
+            min-height: 100vh; /* Full viewport height */
+            padding: 20px; /* Padding around the content */
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 95%; /* Adjust width for better responsiveness */
+            max-width: 1200px; /* Max width for desktop */
+            display: grid;
+            grid-template-columns: 1fr; /* Single column for mobile */
+            gap: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden; /* Ensure rounded corners clip content */
+            background-color: #ffffff;
+            padding: 20px;
+        }
+
+        @media (min-width: 768px) { /* Two columns for tablet and desktop */
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .code-section, .output-section {
+            display: flex;
+            flex-direction: column;
+            background-color: #f9fafb; /* Lighter background for sections */
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e2e8f0; /* Light border */
+        }
+
+        /* Styles for the CodeMirror editor */
+        .CodeMirror {
+            border: 1px solid #cbd5e1; /* Subtle border for the editor */
+            border-radius: 6px;
+            font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace; /* Monospace font */
+            font-size: 0.95rem;
+            line-height: 1.5;
+            height: 400px; /* Fixed height for the editor */
+            flex-grow: 1;
+            overflow: hidden; /* Ensure content is clipped within rounded corners */
+        }
+
+        .CodeMirror-scroll {
+            /* Adjust scroll behavior if needed, usually fine by default */
+        }
+
+        .CodeMirror-gutters {
+            border-radius: 6px 0 0 6px; /* Rounded corners only on the left for gutters */
+        }
+
+        /* Output console styles */
+        #output {
+            min-height: 200px; /* Minimum height for output */
+            white-space: pre-wrap; /* Preserve whitespace and wrap text */
+            word-break: break-word; /* Break long words */
+            background-color: #1e293b; /* Dark background for output console */
+            color: #e2e8f0; /* Light text for output console */
+            padding: 15px;
+            border-radius: 8px;
+            overflow-y: auto; /* Scroll for long output */
+            flex-grow: 1;
+        }
+
+        /* Style for library input */
+        #library-url {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="container bg-white rounded-xl shadow-lg p-6">
+        <!-- Code Editor and Library Section -->
+        <div class="code-section">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Your Code</h2>
+            <!-- CodeMirror will initialize on this textarea -->
+            <textarea id="code-editor" class="rounded-lg shadow-sm"></textarea>
+
+            <button id="run-button"
+                class="mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 ease-in-out transform hover:scale-105">
+                Run Code
+            </button>
+
+            <!-- Library Loading Section -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-inner">
+                <h3 class="text-xl font-medium mb-3 text-gray-700">Load External Library</h3>
+                <input type="text" id="library-url" placeholder="e.g., https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"
+                    class="w-full p-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 transition duration-150 ease-in-out mb-2">
+                <button id="load-library-button"
+                    class="px-5 py-2 bg-purple-600 text-white font-bold rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 transition duration-200 ease-in-out">
+                    Load Library
+                </button>
+                <div id="library-status" class="mt-3 text-sm text-gray-600"></div>
+            </div>
+        </div>
+
+        <!-- Output Section -->
+        <div class="output-section">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Output Console</h2>
+            <pre id="output" class="rounded-lg shadow-inner"></pre>
+        </div>
+    </div>
+
+    <!-- CodeMirror JS Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+
+    <script>
+        // Get references to DOM elements
+        const codeEditorElement = document.getElementById('code-editor');
+        const runButton = document.getElementById('run-button');
+        const outputConsole = document.getElementById('output');
+        const libraryUrlInput = document.getElementById('library-url');
+        const loadLibraryButton = document.getElementById('load-library-button');
+        const libraryStatus = document.getElementById('library-status');
+
+        // Initialize CodeMirror editor
+        const editor = CodeMirror.fromTextArea(codeEditorElement, {
+            mode: 'javascript',        // Set mode to JavaScript for syntax highlighting
+            theme: 'dracula',          // Use the Dracula theme for styling
+            lineNumbers: true,         // Show line numbers
+            indentUnit: 2,             // 2 spaces for indentation
+            tabSize: 2,                // 2 spaces per tab
+            lineWrapping: true,        // Wrap long lines
+            autoCloseBrackets: true,   // Automatically close brackets/quotes
+            matchBrackets: true,       // Highlight matching brackets
+            value: `console.log('Hello from the new editor!');
+
+// You can now write code and see it highlighted directly.
+
+function greet(name) {
+  return 'Hello, ' + name + '!';
+}
+
+console.log(greet('CodeMirror'));
+
+// Try loading a library, e.g., moment.js for date manipulation:
+// https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js
+// Then use it in your code like:
+// console.log(moment().format('MMMM Do YYYY, h:mm:ss a'));
+`
+        });
+
+        // --- Code Execution Logic ---
+        runButton.addEventListener('click', () => {
+            const codeToExecute = editor.getValue(); // Get code from CodeMirror
+            outputConsole.textContent = ''; // Clear previous output
+
+            // Store original console methods
+            const originalConsoleLog = console.log;
+            const originalConsoleError = console.error;
+
+            // Redirect console.log and console.error to our output console
+            console.log = (...args) => {
+                outputConsole.textContent += args.map(arg => {
+                    if (typeof arg === 'object' && arg !== null) {
+                        try {
+                            return JSON.stringify(arg, null, 2);
+                        } catch (e) {
+                            return String(arg); // Fallback for circular references or complex objects
+                        }
+                    }
+                    return String(arg);
+                }).join(' ') + '\n';
+                originalConsoleLog(...args); // Also log to the browser's console
+            };
+            console.error = (...args) => {
+                outputConsole.textContent += 'ERROR: ' + args.map(arg => {
+                    if (typeof arg === 'object' && arg !== null) {
+                        try {
+                            return JSON.stringify(arg, null, 2);
+                        } catch (e) {
+                            return String(arg);
+                        }
+                    }
+                    return String(arg);
+                }).join(' ') + '\n';
+                originalConsoleError(...args); // Also log to the browser's console
+            };
+
+            try {
+                // Create a function wrapper to execute the code safely
+                // This isolates variables and prevents global pollution to some extent.
+                // However, it cannot prevent direct DOM manipulation or global API calls.
+                const executableFunction = new Function(codeToExecute);
+                executableFunction(); // Execute the code
+            } catch (error) {
+                console.error('Execution Error:', error);
+            } finally {
+                // Restore original console methods after a short delay to ensure all async logs are captured
+                setTimeout(() => {
+                    console.log = originalConsoleLog;
+                    console.error = originalConsoleError;
+                }, 100);
+            }
+        });
+
+        // --- Library Loading Logic ---
+        loadLibraryButton.addEventListener('click', () => {
+            const libraryUrl = libraryUrlInput.value.trim();
+            if (!libraryUrl) {
+                libraryStatus.textContent = 'Please enter a library URL.';
+                libraryStatus.className = 'mt-3 text-sm text-red-600';
+                return;
+            }
+
+            // Check if the script is already loaded to prevent duplicates
+            const existingScripts = document.querySelectorAll(`script[src="${libraryUrl}"]`);
+            if (existingScripts.length > 0) {
+                libraryStatus.textContent = 'Library already loaded.';
+                libraryStatus.className = 'mt-3 text-sm text-yellow-600';
+                return;
+            }
+
+            libraryStatus.textContent = 'Loading library...';
+            libraryStatus.className = 'mt-3 text-sm text-blue-600';
+
+            const script = document.createElement('script');
+            script.src = libraryUrl;
+            script.async = true; // Load asynchronously
+
+            script.onload = () => {
+                libraryStatus.textContent = `Library "${libraryUrl.split('/').pop()}" loaded successfully!`;
+                libraryStatus.className = 'mt-3 text-sm text-green-600';
+                libraryUrlInput.value = ''; // Clear the input field
+            };
+
+            script.onerror = (e) => {
+                libraryStatus.textContent = `Failed to load library from "${libraryUrl}". Check the URL.`;
+                libraryStatus.className = 'mt-3 text-sm text-red-600';
+                console.error('Failed to load library:', libraryUrl, e);
+            };
+
+            document.head.appendChild(script);
+        });
+    </script>
+</body>
+</html>
