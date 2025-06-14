@@ -110,8 +110,9 @@
             flex-direction: column;
             background-color: #1e1e1e;
             border-radius: 0;
-            /* No overflow here, as CodeMirror and #output handle their own scrolling */
+            /* editor-panel's content (CodeMirror) will handle its own scrolling */
             height: 100%; /* Fill parent container's height */
+            overflow: hidden; /* Ensure panel itself doesn't scroll, relying on CodeMirror's scroll */
         }
 
         @media (min-width: 768px) {
@@ -134,9 +135,10 @@
             line-height: 1.5;
             height: 100%; /* CodeMirror itself fills its panel */
             flex-grow: 1;
-            overflow: hidden; /* CodeMirror's internal scroll handles overflow */
+            /* Removed overflow: hidden from here, as CodeMirror's internal scroll handles overflow */
             background-color: #1e1e1e !important;
             padding-bottom: 0;
+            min-height: 200px; /* Ensure sufficient height for scrollbar to appear */
         }
         .CodeMirror-gutters {
             background-color: #252526 !important;
@@ -501,6 +503,7 @@ var x = 10;
         });
 
         // Initial setup for CodeMirror to take full height
+        // This is important because CodeMirror needs its container to have a defined height
         editor.setSize(null, '100%');
     </script>
 </body>
