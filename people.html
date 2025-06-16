@@ -402,7 +402,7 @@
                             'Content-Type': 'application/json',
                             // Add any other headers your webhook requires (e.g., API key)
                         },
-                        body: JSON.stringify({ chatInput: name, sessionId: new Date().toDateTime().toMillis() }) // Send the name in a JSON body
+                        body: JSON.stringify({ chatInput: name}) // Send the name in a JSON body
                         // Adjust the body structure ({ name: name }) if your webhook expects something different
                     });
 
