@@ -423,10 +423,11 @@
 
                     // --- Use the webhook data for both the canvas and the detailed list ---
 
+                    console.log('Search results:', data); // Log the response for debugging
                     // 1. Draw the visualization on the canvas
                     // Pass the array of results to the drawing function
                     // *** Make sure 'data.results' is the correct path to your results array ***
-                    drawResultsVisualization(data.results);
+                    drawResultsVisualization(data.output || data.results || []); // Adjust based on your webhook response structure
 
 
                     // 2. Display the detailed results as HTML
