@@ -445,7 +445,63 @@
                     loadingIndicator.classList.add('hidden');
                     searchButton.disabled = false;
                 }
+
+
             }
+
+
+            function displayResults(data) {
+        resultsArea.innerHTML = ''; // Clear previous results
+
+        if (!data || !data.results || data.results.length === 0) {
+            // Assuming the webhook returns an object like { results: [...] }
+            resultsArea.innerHTML = '<p class="no-results-message">No results found for this name.</p>';
+            return;
+        }
+
+        // Assuming data.results is an array of result objects
+        // Each result object might look like:
+        // { platform: 'TikTok', url: '...', description: '...' } or similar
+        data.results.forEach(result => {
+            const resultItem = document.createElement('div');
+            resultItem.classList.add('result-item');
+
+            // --- Start: Adjust the structure below based on your webhook response ---
+            // Example structure assuming result has 'platform', 'url', 'description'
+            if (result.platform) {
+                 const platformHeading = document.createElement('h3');
+                 platformHeading.textContent = result.platform;
+                 resultItem.appendChild(platformHeading);
+            }
+
+            if (result.description) {
+                const descriptionPara = document.createElement('p');
+                 descriptionPara.textContent = result.description;
+                 resultItem.appendChild(descriptionPara);
+            }
+
+            if (result.url) {
+                 const urlLink = document.createElement('a');
+                 urlLink.href = result.url;
+                 urlLink.textContent = result.url; // Or maybe "View Profile"
+                 urlLink.target = "_blank"; // Open in new tab
+                 resultItem.appendChild(urlLink);
+            }
+
+            // If your response includes more fields (like specific metrics, photos etc.)
+            // you will add elements here to display them.
+            // Example: If response includes result.followers
+            // if (result.followers !== undefined) {
+            //    const followersPara = document.createElement('p');
+            //    followersPara.textContent = `Followers: ${result.followers}`;
+            //    resultItem.appendChild(followersPara);
+            // }
+            // --- End: Adjust the structure above based on your webhook response ---
+
+
+            resultsArea.appendChild(resultItem);
+        });
+    }
 
             // Add event listener to the button
             searchButton.addEventListener('click', handleSearch);
