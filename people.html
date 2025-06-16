@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,11 +37,13 @@
         .search-box {
             display: flex;
             margin-bottom: 20px;
-            gap: 10px; /* Space between input and button */
+            gap: 10px;
+            /* Space between input and button */
         }
 
         .search-box input[type="text"] {
-            flex-grow: 1; /* Input takes up available space */
+            flex-grow: 1;
+            /* Input takes up available space */
             padding: 12px 15px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -92,8 +95,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
 
@@ -118,15 +126,18 @@
         #resultsCanvas {
             border: 1px solid #ccc;
             background-color: #f9f9f9;
-            display: block; /* Remove extra space below inline elements */
-            margin: 0 auto; /* Center the canvas */
+            display: block;
+            /* Remove extra space below inline elements */
+            margin: 0 auto;
+            /* Center the canvas */
         }
 
 
         #resultsArea {
-            margin-top: 20px; /* Added space between canvas area and results list */
-            /* border-top: 1px solid #eee; /* Removed top border as it's on the container */ */
-            padding-top: 10px;
+            margin-top: 20px;
+            /* Added space between canvas area and results list */
+            /* border-top: 1px solid #eee; /* Removed top border as it's on the container */
+            */ padding-top: 10px;
         }
 
         #resultsArea .initial-message,
@@ -143,7 +154,8 @@
             border-radius: 5px;
             padding: 15px;
             margin-bottom: 15px;
-            word-wrap: break-word; /* Prevent long URLs from breaking layout */
+            word-wrap: break-word;
+            /* Prevent long URLs from breaking layout */
         }
 
         .result-item h3 {
@@ -173,13 +185,15 @@
         }
 
         .no-results-message {
-             color: #ffc107;
-             text-align: center;
-             font-weight: bold;
+            color: #ffc107;
+            text-align: center;
+            font-weight: bold;
         }
+
         /* style.css content ends here */
     </style>
 </head>
+
 <body>
 
     <div class="container">
@@ -198,12 +212,12 @@
         <div id="resultsContainer">
             <div id="canvasArea">
                 <h2>Platform Distribution</h2>
-                 <!-- Canvas for visualization -->
+                <!-- Canvas for visualization -->
                 <canvas id="resultsCanvas" width="700" height="150"></canvas>
                 <p id="canvasMessage" class="initial-message">Search to see platform distribution.</p>
             </div>
 
-             <div id="resultsArea">
+            <div id="resultsArea">
                 <!-- Detailed search results will be loaded here by JavaScript -->
                 <p class="initial-message">Enter a name and click Search to find profiles.</p>
             </div>
@@ -254,9 +268,9 @@
 
                 const platforms = Object.keys(platformCounts);
                 if (platforms.length === 0) {
-                     canvasMessage.textContent = "No platform data available for visualization.";
-                     canvasMessage.classList.remove('hidden');
-                     return;
+                    canvasMessage.textContent = "No platform data available for visualization.";
+                    canvasMessage.classList.remove('hidden');
+                    return;
                 }
 
 
@@ -325,23 +339,23 @@
                     // --- Start: Adjust the structure below based on your webhook response ---
                     // Example structure assuming result has 'platform', 'url', 'description'
                     if (result.platform) {
-                         const platformHeading = document.createElement('h3');
-                         platformHeading.textContent = result.platform;
-                         resultItem.appendChild(platformHeading);
+                        const platformHeading = document.createElement('h3');
+                        platformHeading.textContent = result.platform;
+                        resultItem.appendChild(platformHeading);
                     }
 
                     if (result.description) {
                         const descriptionPara = document.createElement('p');
-                         descriptionPara.textContent = result.description;
-                         resultItem.appendChild(descriptionPara);
+                        descriptionPara.textContent = result.description;
+                        resultItem.appendChild(descriptionPara);
                     }
 
                     if (result.url) {
-                         const urlLink = document.createElement('a');
-                         urlLink.href = result.url;
-                         urlLink.textContent = result.url; // Or maybe "View Profile"
-                         urlLink.target = "_blank"; // Open in new tab
-                         resultItem.appendChild(urlLink);
+                        const urlLink = document.createElement('a');
+                        urlLink.href = result.url;
+                        urlLink.textContent = result.url; // Or maybe "View Profile"
+                        urlLink.target = "_blank"; // Open in new tab
+                        resultItem.appendChild(urlLink);
                     }
 
                     // If your response includes more fields (like specific metrics, photos etc.)
@@ -359,7 +373,7 @@
                 });
             }
 
-             // Function to clear both canvas and detailed results
+            // Function to clear both canvas and detailed results
             function clearResultsAreas() {
                 resultsArea.innerHTML = '';
                 resultsArea.appendChild(document.createElement('p')).classList.add('initial-message');
@@ -368,6 +382,60 @@
                 ctx.clearRect(0, 0, resultsCanvas.width, resultsCanvas.height); // Clear canvas
                 canvasMessage.textContent = "Search to see platform distribution.";
                 canvasMessage.classList.remove('hidden'); // Ensure canvas message is visible
+            }
+
+
+            function displayResults(data) {
+                resultsArea.innerHTML = ''; // Clear previous results
+
+                if (!data || !data.results || data.results.length === 0) {
+                    // Assuming the webhook returns an object like { results: [...] }
+                    resultsArea.innerHTML = '<p class="no-results-message">No results found for this name.</p>';
+                    return;
+                }
+
+                // Assuming data.results is an array of result objects
+                // Each result object might look like:
+                // { platform: 'TikTok', url: '...', description: '...' } or similar
+                data.results.forEach(result => {
+                    const resultItem = document.createElement('div');
+                    resultItem.classList.add('result-item');
+
+                    // --- Start: Adjust the structure below based on your webhook response ---
+                    // Example structure assuming result has 'platform', 'url', 'description'
+                    if (result.platform) {
+                        const platformHeading = document.createElement('h3');
+                        platformHeading.textContent = result.platform;
+                        resultItem.appendChild(platformHeading);
+                    }
+
+                    if (result.description) {
+                        const descriptionPara = document.createElement('p');
+                        descriptionPara.textContent = result.description;
+                        resultItem.appendChild(descriptionPara);
+                    }
+
+                    if (result.url) {
+                        const urlLink = document.createElement('a');
+                        urlLink.href = result.url;
+                        urlLink.textContent = result.url; // Or maybe "View Profile"
+                        urlLink.target = "_blank"; // Open in new tab
+                        resultItem.appendChild(urlLink);
+                    }
+
+                    // If your response includes more fields (like specific metrics, photos etc.)
+                    // you will add elements here to display them.
+                    // Example: If response includes result.followers
+                    // if (result.followers !== undefined) {
+                    //    const followersPara = document.createElement('p');
+                    //    followersPara.textContent = `Followers: ${result.followers}`;
+                    //    resultItem.appendChild(followersPara);
+                    // }
+                    // --- End: Adjust the structure above based on your webhook response ---
+
+
+                    resultsArea.appendChild(resultItem);
+                });
             }
 
 
@@ -402,20 +470,20 @@
                             'Content-Type': 'application/json',
                             // Add any other headers your webhook requires (e.g., API key)
                         },
-                        body: JSON.stringify({ chatInput: name}) // Send the name in a JSON body
+                        body: JSON.stringify({ chatInput: name }) // Send the name in a JSON body
                         // Adjust the body structure ({ name: name }) if your webhook expects something different
                     });
 
                     if (!response.ok) {
                         // Handle HTTP errors (e.g., 404, 500)
-                         let errorText = `HTTP error! status: ${response.status}`;
-                         try {
-                             const errorBody = await response.json(); // Try parsing JSON error body
-                             if(errorBody && errorBody.message) errorText += `, message: ${errorBody.message}`;
-                         } catch (e) {
-                              const rawText = await response.text(); // Fallback to raw text
-                              if(rawText) errorText += `, response body: ${rawText.substring(0, 150)}...`; // Limit message length
-                         }
+                        let errorText = `HTTP error! status: ${response.status}`;
+                        try {
+                            const errorBody = await response.json(); // Try parsing JSON error body
+                            if (errorBody && errorBody.message) errorText += `, message: ${errorBody.message}`;
+                        } catch (e) {
+                            const rawText = await response.text(); // Fallback to raw text
+                            if (rawText) errorText += `, response body: ${rawText.substring(0, 150)}...`; // Limit message length
+                        }
                         throw new Error(errorText);
                     }
 
@@ -427,12 +495,13 @@
                     // 1. Draw the visualization on the canvas
                     // Pass the array of results to the drawing function
                     // *** Make sure 'data.results' is the correct path to your results array ***
-                    drawResultsVisualization(data.output || data.results || []); // Adjust based on your webhook response structure
+                    dispatchEvent(data.output || data.results || ""); // Adjust based on your webhook response structure
+                    // drawResultsVisualization(data.output || data.results || []); // Adjust based on your webhook response structure
 
 
                     // 2. Display the detailed results as HTML
                     // Pass the same array to the detailed display function
-                     displayDetailedResults(data);
+                    //  displayDetailedResults(data);
 
 
                 } catch (error) {
@@ -450,59 +519,6 @@
             }
 
 
-            function displayResults(data) {
-        resultsArea.innerHTML = ''; // Clear previous results
-
-        if (!data || !data.results || data.results.length === 0) {
-            // Assuming the webhook returns an object like { results: [...] }
-            resultsArea.innerHTML = '<p class="no-results-message">No results found for this name.</p>';
-            return;
-        }
-
-        // Assuming data.results is an array of result objects
-        // Each result object might look like:
-        // { platform: 'TikTok', url: '...', description: '...' } or similar
-        data.results.forEach(result => {
-            const resultItem = document.createElement('div');
-            resultItem.classList.add('result-item');
-
-            // --- Start: Adjust the structure below based on your webhook response ---
-            // Example structure assuming result has 'platform', 'url', 'description'
-            if (result.platform) {
-                 const platformHeading = document.createElement('h3');
-                 platformHeading.textContent = result.platform;
-                 resultItem.appendChild(platformHeading);
-            }
-
-            if (result.description) {
-                const descriptionPara = document.createElement('p');
-                 descriptionPara.textContent = result.description;
-                 resultItem.appendChild(descriptionPara);
-            }
-
-            if (result.url) {
-                 const urlLink = document.createElement('a');
-                 urlLink.href = result.url;
-                 urlLink.textContent = result.url; // Or maybe "View Profile"
-                 urlLink.target = "_blank"; // Open in new tab
-                 resultItem.appendChild(urlLink);
-            }
-
-            // If your response includes more fields (like specific metrics, photos etc.)
-            // you will add elements here to display them.
-            // Example: If response includes result.followers
-            // if (result.followers !== undefined) {
-            //    const followersPara = document.createElement('p');
-            //    followersPara.textContent = `Followers: ${result.followers}`;
-            //    resultItem.appendChild(followersPara);
-            // }
-            // --- End: Adjust the structure above based on your webhook response ---
-
-
-            resultsArea.appendChild(resultItem);
-        });
-    }
-
             // Add event listener to the button
             searchButton.addEventListener('click', handleSearch);
 
@@ -514,12 +530,13 @@
                 }
             });
 
-             // Initial state: Clear canvas and show initial message
-             clearResultsAreas();
+            // Initial state: Clear canvas and show initial message
+            clearResultsAreas();
         });
 
         // script.js content ends here
     </script>
 
 </body>
+
 </html>
