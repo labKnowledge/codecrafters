@@ -38,12 +38,10 @@
             display: flex;
             margin-bottom: 20px;
             gap: 10px;
-            /* Space between input and button */
         }
 
         .search-box input[type="text"] {
             flex-grow: 1;
-            /* Input takes up available space */
             padding: 12px 15px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -81,7 +79,6 @@
             display: none;
         }
 
-        /* Basic spinner style */
         .spinner {
             border: 4px solid rgba(0, 0, 0, 0.1);
             border-top: 4px solid #007bff;
@@ -103,7 +100,6 @@
                 transform: rotate(360deg);
             }
         }
-
 
         #resultsContainer {
             margin-top: 30px;
@@ -127,17 +123,12 @@
             border: 1px solid #ccc;
             background-color: #f9f9f9;
             display: block;
-            /* Remove extra space below inline elements */
             margin: 0 auto;
-            /* Center the canvas */
         }
-
 
         #resultsArea {
             margin-top: 20px;
-            /* Added space between canvas area and results list */
-            /* border-top: 1px solid #eee; /* Removed top border as it's on the container */
-            */ padding-top: 10px;
+            padding-top: 10px;
         }
 
         #resultsArea .initial-message,
@@ -147,7 +138,6 @@
             font-style: italic;
         }
 
-        /* Styling for individual result items (adjust based on webhook response) */
         .result-item {
             background-color: #e9ecef;
             border: 1px solid #dee2e6;
@@ -155,7 +145,6 @@
             padding: 15px;
             margin-bottom: 15px;
             word-wrap: break-word;
-            /* Prevent long URLs from breaking layout */
         }
 
         .result-item h3 {
@@ -190,7 +179,24 @@
             font-weight: bold;
         }
 
-        /* style.css content ends here */
+        .output-content {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: inherit;
+        }
+
+        .html-content {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 
@@ -212,24 +218,17 @@
         <div id="resultsContainer">
             <div id="canvasArea">
                 <h2>Platform Distribution</h2>
-                <!-- Canvas for visualization -->
                 <canvas id="resultsCanvas" width="700" height="150"></canvas>
                 <p id="canvasMessage" class="initial-message">Search to see platform distribution.</p>
             </div>
 
             <div id="resultsArea">
-                <!-- Detailed search results will be loaded here by JavaScript -->
                 <p class="initial-message">Enter a name and click Search to find profiles.</p>
             </div>
         </div>
-
-
     </div>
 
-    <!-- Script JS -->
     <script>
-        // script.js content starts here
-
         document.addEventListener('DOMContentLoaded', () => {
             const personNameInput = document.getElementById('personName');
             const searchButton = document.getElementById('searchButton');
@@ -237,33 +236,75 @@
             const resultsArea = document.getElementById('resultsArea');
             const resultsCanvas = document.getElementById('resultsCanvas');
             const canvasMessage = document.getElementById('canvasMessage');
-            const ctx = resultsCanvas.getContext('2d'); // Get the 2D drawing context
+            const ctx = resultsCanvas.getContext('2d');
 
             // Replace with your actual webhook URL
             const WEBHOOK_URL = 'https://model.takenolab.tech/webhook/people';
 
-            // --- Canvas Drawing Logic ---
+            // Function to parse JSON from string content
+            function tryParseJSON(content) {
+                try {
+                    return JSON.parse(content);
+                } catch (e) {
+                    return null;
+                }
+            }
 
-            function drawResultsVisualization(results) {
+            // Function to check if content is HTML
+            function isHTML(content) {
+                return /<[^>]*>/g.test(content);
+            }
+
+            // Function to extract platform information from parsed data or text
+            function extractPlatformData(content) {
+                const platforms = [];
+                
+                if (Array.isArray(content)) {
+                    // If it's already an array of objects with platform info
+                    return content;
+                } else if (typeof content === 'object' && content.results) {
+                    // If it's an object with results array
+                    return content.results;
+                } else if (typeof content === 'string') {
+                    // Try to extract platform mentions from text
+                    const platformKeywords = [
+                        'facebook', 'instagram', 'twitter', 'linkedin', 'tiktok', 
+                        'youtube', 'snapchat', 'pinterest', 'reddit', 'github'
+                    ];
+                    
+                    const lowerContent = content.toLowerCase();
+                    platformKeywords.forEach(platform => {
+                        // Count occurrences of platform mentions
+                        const matches = (lowerContent.match(new RegExp(platform, 'g')) || []).length;
+                        if (matches > 0) {
+                            platforms.push({ platform: platform, count: matches });
+                        }
+                    });
+                }
+                
+                return platforms;
+            }
+
+            // Canvas drawing logic
+            function drawResultsVisualization(extractedData) {
                 const canvasWidth = resultsCanvas.width;
                 const canvasHeight = resultsCanvas.height;
-                ctx.clearRect(0, 0, canvasWidth, canvasHeight); // Clear previous drawing
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-                if (!results || results.length === 0) {
+                if (!extractedData || extractedData.length === 0) {
                     canvasMessage.textContent = "No platform data available for visualization.";
                     canvasMessage.classList.remove('hidden');
                     return;
                 }
 
-                canvasMessage.classList.add('hidden'); // Hide message if drawing
+                canvasMessage.classList.add('hidden');
 
-                // Count results per platform (normalize platform names)
+                // Count results per platform
                 const platformCounts = {};
-                results.forEach(result => {
-                    // *** ASSUMPTION: result object has a 'platform' property (string) ***
-                    // Adjust 'result.platform' if your webhook uses a different property name
-                    const platformName = result.platform ? result.platform.toLowerCase().trim() : 'other';
-                    platformCounts[platformName] = (platformCounts[platformName] || 0) + 1;
+                extractedData.forEach(item => {
+                    const platformName = (item.platform || 'other').toLowerCase().trim();
+                    const count = item.count || 1;
+                    platformCounts[platformName] = (platformCounts[platformName] || 0) + count;
                 });
 
                 const platforms = Object.keys(platformCounts);
@@ -273,175 +314,138 @@
                     return;
                 }
 
-
-                // Simple bar chart visualization
-                const barHeight = 30;
-                const barSpacing = 10;
+                // Bar chart visualization
+                const barHeight = 25;
+                const barSpacing = 8;
                 const startY = 10;
                 const startX = 10;
-                const maxBarWidth = canvasWidth - startX * 2 - 150; // Leave space for text labels
-                const maxCount = Math.max(...Object.values(platformCounts)); // Find the highest count
+                const maxBarWidth = canvasWidth - startX * 2 - 150;
+                const maxCount = Math.max(...Object.values(platformCounts));
 
-                // Define some colors for common platforms
                 const platformColors = {
                     'tiktok': '#ff0050',
                     'facebook': '#1877f2',
                     'linkedin': '#0a66c2',
                     'instagram': '#c32aa3',
-                    'twitter': '#1da1f2', // X
+                    'twitter': '#1da1f2',
                     'youtube': '#ff0000',
-                    'other': '#6c757d' // Grey for anything else
+                    'github': '#333333',
+                    'reddit': '#ff4500',
+                    'snapchat': '#fffc00',
+                    'pinterest': '#bd081c',
+                    'other': '#6c757d'
                 };
 
                 let currentY = startY;
 
                 platforms.forEach(platform => {
                     const count = platformCounts[platform];
-                    const barWidth = (count / maxCount) * maxBarWidth;
-                    const color = platformColors[platform] || platformColors['other']; // Get color, default to 'other'
+                    const barWidth = Math.max((count / maxCount) * maxBarWidth, 20);
+                    const color = platformColors[platform] || platformColors['other'];
 
                     // Draw the bar
                     ctx.fillStyle = color;
                     ctx.fillRect(startX, currentY, barWidth, barHeight);
 
-                    // Draw the text label (Platform Name: Count)
-                    ctx.fillStyle = '#333'; // Dark text color
-                    ctx.font = '14px Arial';
+                    // Draw the text label
+                    ctx.fillStyle = '#333';
+                    ctx.font = '12px Arial';
                     ctx.textAlign = 'left';
-                    // Position text after the bar + some padding
                     const textX = startX + barWidth + 10;
-                    const textY = currentY + barHeight / 2 + 5; // Center text vertically in bar
-                    ctx.fillText(`${platform.charAt(0).toUpperCase() + platform.slice(1)}: ${count}`, textX, textY); // Capitalize first letter
+                    const textY = currentY + barHeight / 2 + 4;
+                    ctx.fillText(`${platform.charAt(0).toUpperCase() + platform.slice(1)}: ${count}`, textX, textY);
 
                     currentY += barHeight + barSpacing;
                 });
             }
 
-
-            // Function to display detailed results (HTML elements)
-            // THIS FUNCTION REMAINS LARGELY THE SAME AS BEFORE, BUT NOW IT'S CALLED *AFTER* DRAWING THE CANVAS
-            function displayDetailedResults(data) {
-                resultsArea.innerHTML = ''; // Clear previous results
-
-                if (!data || !data.results || data.results.length === 0) {
-                    // Assuming the webhook returns an object like { results: [...] }
-                    resultsArea.innerHTML = '<p class="no-results-message">No detailed results found.</p>';
-                    return;
-                }
-
-                // Assuming data.results is an array of result objects
-                // Each result object might look like:
-                // { platform: 'TikTok', url: '...', description: '...' } or similar
-                data.results.forEach(result => {
-                    const resultItem = document.createElement('div');
-                    resultItem.classList.add('result-item');
-
-                    // --- Start: Adjust the structure below based on your webhook response ---
-                    // Example structure assuming result has 'platform', 'url', 'description'
-                    if (result.platform) {
-                        const platformHeading = document.createElement('h3');
-                        platformHeading.textContent = result.platform;
-                        resultItem.appendChild(platformHeading);
-                    }
-
-                    if (result.description) {
-                        const descriptionPara = document.createElement('p');
-                        descriptionPara.textContent = result.description;
-                        resultItem.appendChild(descriptionPara);
-                    }
-
-                    if (result.url) {
-                        const urlLink = document.createElement('a');
-                        urlLink.href = result.url;
-                        urlLink.textContent = result.url; // Or maybe "View Profile"
-                        urlLink.target = "_blank"; // Open in new tab
-                        resultItem.appendChild(urlLink);
-                    }
-
-                    // If your response includes more fields (like specific metrics, photos etc.)
-                    // you will add elements here to display them.
-                    // Example: If response includes result.followers
-                    // if (result.followers !== undefined) {
-                    //    const followersPara = document.createElement('p');
-                    //    followersPara.textContent = `Followers: ${result.followers}`;
-                    //    resultItem.appendChild(followersPara);
-                    // }
-                    // --- End: Adjust the structure above based on your webhook response ---
-
-
-                    resultsArea.appendChild(resultItem);
-                });
-            }
-
-            // Function to clear both canvas and detailed results
-            function clearResultsAreas() {
+            // Function to display the output content
+            function displayResults(output) {
                 resultsArea.innerHTML = '';
-                resultsArea.appendChild(document.createElement('p')).classList.add('initial-message');
-                resultsArea.querySelector('.initial-message').textContent = 'Enter a name and click Search to find profiles.'; // Reset initial message
 
-                ctx.clearRect(0, 0, resultsCanvas.width, resultsCanvas.height); // Clear canvas
-                canvasMessage.textContent = "Search to see platform distribution.";
-                canvasMessage.classList.remove('hidden'); // Ensure canvas message is visible
-            }
-
-
-            function displayResults(data) {
-                resultsArea.innerHTML = ''; // Clear previous results
-
-                if (!data || !data.results || data.results.length === 0) {
-                    // Assuming the webhook returns an object like { results: [...] }
+                if (!output || output.trim() === '') {
                     resultsArea.innerHTML = '<p class="no-results-message">No results found for this name.</p>';
                     return;
                 }
 
-                // Assuming data.results is an array of result objects
-                // Each result object might look like:
-                // { platform: 'TikTok', url: '...', description: '...' } or similar
-                data.results.forEach(result => {
-                    const resultItem = document.createElement('div');
-                    resultItem.classList.add('result-item');
-
-                    // --- Start: Adjust the structure below based on your webhook response ---
-                    // Example structure assuming result has 'platform', 'url', 'description'
-                    if (result.platform) {
-                        const platformHeading = document.createElement('h3');
-                        platformHeading.textContent = result.platform;
-                        resultItem.appendChild(platformHeading);
+                // Try to parse as JSON first
+                const parsedJSON = tryParseJSON(output);
+                
+                if (parsedJSON) {
+                    // Handle JSON data
+                    if (Array.isArray(parsedJSON)) {
+                        // Display as structured results
+                        parsedJSON.forEach(item => {
+                            const resultItem = document.createElement('div');
+                            resultItem.classList.add('result-item');
+                            
+                            Object.keys(item).forEach(key => {
+                                const value = item[key];
+                                if (typeof value === 'string' && value.startsWith('http')) {
+                                    // Create link for URLs
+                                    const link = document.createElement('a');
+                                    link.href = value;
+                                    link.textContent = `${key}: ${value}`;
+                                    link.target = '_blank';
+                                    resultItem.appendChild(link);
+                                    resultItem.appendChild(document.createElement('br'));
+                                } else {
+                                    const p = document.createElement('p');
+                                    p.innerHTML = `<strong>${key}:</strong> ${value}`;
+                                    resultItem.appendChild(p);
+                                }
+                            });
+                            
+                            resultsArea.appendChild(resultItem);
+                        });
+                    } else {
+                        // Display JSON object
+                        const resultItem = document.createElement('div');
+                        resultItem.classList.add('output-content');
+                        resultItem.textContent = JSON.stringify(parsedJSON, null, 2);
+                        resultsArea.appendChild(resultItem);
                     }
-
-                    if (result.description) {
-                        const descriptionPara = document.createElement('p');
-                        descriptionPara.textContent = result.description;
-                        resultItem.appendChild(descriptionPara);
-                    }
-
-                    if (result.url) {
-                        const urlLink = document.createElement('a');
-                        urlLink.href = result.url;
-                        urlLink.textContent = result.url; // Or maybe "View Profile"
-                        urlLink.target = "_blank"; // Open in new tab
-                        resultItem.appendChild(urlLink);
-                    }
-
-                    // If your response includes more fields (like specific metrics, photos etc.)
-                    // you will add elements here to display them.
-                    // Example: If response includes result.followers
-                    // if (result.followers !== undefined) {
-                    //    const followersPara = document.createElement('p');
-                    //    followersPara.textContent = `Followers: ${result.followers}`;
-                    //    resultItem.appendChild(followersPara);
-                    // }
-                    // --- End: Adjust the structure above based on your webhook response ---
-
-
-                    resultsArea.appendChild(resultItem);
-                });
+                    
+                    // Try to extract platform data for visualization
+                    const platformData = extractPlatformData(parsedJSON);
+                    drawResultsVisualization(platformData);
+                    
+                } else if (isHTML(output)) {
+                    // Handle HTML content
+                    const htmlContainer = document.createElement('div');
+                    htmlContainer.classList.add('html-content');
+                    htmlContainer.innerHTML = output;
+                    resultsArea.appendChild(htmlContainer);
+                    
+                    // Try to extract platform data from HTML text
+                    const textContent = htmlContainer.textContent || htmlContainer.innerText;
+                    const platformData = extractPlatformData(textContent);
+                    drawResultsVisualization(platformData);
+                    
+                } else {
+                    // Handle plain text
+                    const textContainer = document.createElement('div');
+                    textContainer.classList.add('output-content');
+                    textContainer.textContent = output;
+                    resultsArea.appendChild(textContainer);
+                    
+                    // Try to extract platform data from text
+                    const platformData = extractPlatformData(output);
+                    drawResultsVisualization(platformData);
+                }
             }
 
+            // Function to clear results
+            function clearResultsAreas() {
+                resultsArea.innerHTML = '<p class="initial-message">Enter a name and click Search to find profiles.</p>';
+                ctx.clearRect(0, 0, resultsCanvas.width, resultsCanvas.height);
+                canvasMessage.textContent = "Search to see platform distribution.";
+                canvasMessage.classList.remove('hidden');
+            }
 
             // Function to display error messages
             function displayError(message) {
-                clearResultsAreas(); // Clear everything on error
+                clearResultsAreas();
                 resultsArea.innerHTML = `<p class="error-message">Error: ${message}</p>`;
             }
 
@@ -454,87 +458,59 @@
                     return;
                 }
 
-                // Clear previous results and messages
                 clearResultsAreas();
-
-
-                // Show loading indicator
                 loadingIndicator.classList.remove('hidden');
-                searchButton.disabled = true; // Disable button
+                searchButton.disabled = true;
 
                 try {
-                    // Send the name to the webhook
                     const response = await fetch(WEBHOOK_URL, {
-                        method: 'POST', // Assuming the webhook expects POST
+                        method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            // Add any other headers your webhook requires (e.g., API key)
                         },
-                        body: JSON.stringify({ chatInput: name }) // Send the name in a JSON body
-                        // Adjust the body structure ({ name: name }) if your webhook expects something different
+                        body: JSON.stringify({ chatInput: name })
                     });
 
                     if (!response.ok) {
-                        // Handle HTTP errors (e.g., 404, 500)
                         let errorText = `HTTP error! status: ${response.status}`;
                         try {
-                            const errorBody = await response.json(); // Try parsing JSON error body
+                            const errorBody = await response.json();
                             if (errorBody && errorBody.message) errorText += `, message: ${errorBody.message}`;
                         } catch (e) {
-                            const rawText = await response.text(); // Fallback to raw text
-                            if (rawText) errorText += `, response body: ${rawText.substring(0, 150)}...`; // Limit message length
+                            const rawText = await response.text();
+                            if (rawText) errorText += `, response body: ${rawText.substring(0, 150)}...`;
                         }
                         throw new Error(errorText);
                     }
 
-                    const data = await response.json(); // Parse the JSON response
+                    const data = await response.json();
+                    console.log('Search results:', data);
 
-                    // --- Use the webhook data for both the canvas and the detailed list ---
-
-                    console.log('Search results:', data); // Log the response for debugging
-                    // 1. Draw the visualization on the canvas
-                    // Pass the array of results to the drawing function
-                    // *** Make sure 'data.results' is the correct path to your results array ***
-                    dispatchEvent(data.output || data.results || ""); // Adjust based on your webhook response structure
-                    // drawResultsVisualization(data.output || data.results || []); // Adjust based on your webhook response structure
-
-
-                    // 2. Display the detailed results as HTML
-                    // Pass the same array to the detailed display function
-                    //  displayDetailedResults(data);
-
+                    // Handle the expected {output: string} format
+                    const output = data.output || data.results || JSON.stringify(data);
+                    displayResults(output);
 
                 } catch (error) {
-                    // Handle network errors, JSON parsing errors, and thrown HTTP errors
                     console.error('Search failed:', error);
                     displayError(error.message || 'An unknown error occurred during search.');
-
                 } finally {
-                    // Hide loading indicator and enable button regardless of success or failure
                     loadingIndicator.classList.add('hidden');
                     searchButton.disabled = false;
                 }
-
-
             }
 
-
-            // Add event listener to the button
+            // Event listeners
             searchButton.addEventListener('click', handleSearch);
-
-            // Optional: Allow searching by pressing Enter key in the input field
             personNameInput.addEventListener('keypress', (event) => {
                 if (event.key === 'Enter') {
-                    event.preventDefault(); // Prevent default form submission if input was inside a form
+                    event.preventDefault();
                     handleSearch();
                 }
             });
 
-            // Initial state: Clear canvas and show initial message
+            // Initial state
             clearResultsAreas();
         });
-
-        // script.js content ends here
     </script>
 
 </body>
