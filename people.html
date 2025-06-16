@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>People Search Engine</title>
+    <title>People Search Engine (SSE)</title>
 
-    <!-- Style CSS -->
+    <!-- Style CSS (No changes here, content is the same as your original) -->
     <style>
         /* style.css content starts here */
 
@@ -280,7 +280,7 @@
 
         <div id="loadingIndicator" class="hidden">
             <div class="spinner"></div>
-            Searching...
+            Searching... (Receiving results in real-time)
         </div>
 
         <div id="resultsContainer">
@@ -296,6 +296,7 @@
         </div>
     </div>
 
+    <!-- SCRIPT SECTION: All changes are here -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const personNameInput = document.getElementById('personName');
@@ -306,54 +307,40 @@
             const canvasMessage = document.getElementById('canvasMessage');
             const ctx = resultsCanvas.getContext('2d');
 
-            // Replace with your actual webhook URL
-            const WEBHOOK_URL = 'https://model.takenolab.tech/webhook/people';
+            // *** MODIFIED: Use the SSE URL ***
+            const SSE_URL = 'https://model.takenolab.tech/mcp/people/sse';
 
-            // Function to parse JSON from string content
+            // *** NEW: Variables to manage the SSE connection and results ***
+            let eventSource = null;
+            let allResults = []; // To accumulate results for the visualization
+
+            // Function to parse JSON from string content (Unchanged)
             function tryParseJSON(content) {
-                try {
-                    return JSON.parse(content);
-                } catch (e) {
-                    return null;
-                }
+                try { return JSON.parse(content); } catch (e) { return null; }
             }
 
-            // Function to check if content is HTML
+            // Function to check if content is HTML (Unchanged)
             function isHTML(content) {
                 return /<[^>]*>/g.test(content);
             }
 
-            // Function to extract platform information from parsed data or text
+            // Function to extract platform information (Unchanged)
             function extractPlatformData(content) {
                 const platforms = [];
-                
-                if (Array.isArray(content)) {
-                    // If it's already an array of objects with platform info
-                    return content;
-                } else if (typeof content === 'object' && content.results) {
-                    // If it's an object with results array
-                    return content.results;
-                } else if (typeof content === 'string') {
-                    // Try to extract platform mentions from text
-                    const platformKeywords = [
-                        'facebook', 'instagram', 'twitter', 'linkedin', 'tiktok', 
-                        'youtube', 'snapchat', 'pinterest', 'reddit', 'github'
-                    ];
-                    
+                if (Array.isArray(content)) { return content; } 
+                else if (typeof content === 'object' && content.results) { return content.results; } 
+                else if (typeof content === 'string') {
+                    const platformKeywords = ['facebook', 'instagram', 'twitter', 'linkedin', 'tiktok', 'youtube', 'snapchat', 'pinterest', 'reddit', 'github'];
                     const lowerContent = content.toLowerCase();
                     platformKeywords.forEach(platform => {
-                        // Count occurrences of platform mentions
                         const matches = (lowerContent.match(new RegExp(platform, 'g')) || []).length;
-                        if (matches > 0) {
-                            platforms.push({ platform: platform, count: matches });
-                        }
+                        if (matches > 0) { platforms.push({ platform: platform, count: matches }); }
                     });
                 }
-                
                 return platforms;
             }
 
-            // Canvas drawing logic
+            // Canvas drawing logic (Unchanged, but will be called with cumulative data)
             function drawResultsVisualization(extractedData) {
                 const canvasWidth = resultsCanvas.width;
                 const canvasHeight = resultsCanvas.height;
@@ -364,10 +351,8 @@
                     canvasMessage.classList.remove('hidden');
                     return;
                 }
-
                 canvasMessage.classList.add('hidden');
 
-                // Count results per platform
                 const platformCounts = {};
                 extractedData.forEach(item => {
                     const platformName = (item.platform || 'other').toLowerCase().trim();
@@ -382,7 +367,6 @@
                     return;
                 }
 
-                // Bar chart visualization
                 const barHeight = 25;
                 const barSpacing = 8;
                 const startY = 10;
@@ -391,116 +375,76 @@
                 const maxCount = Math.max(...Object.values(platformCounts));
 
                 const platformColors = {
-                    'tiktok': '#ff0050',
-                    'facebook': '#1877f2',
-                    'linkedin': '#0a66c2',
-                    'instagram': '#c32aa3',
-                    'twitter': '#1da1f2',
-                    'youtube': '#ff0000',
-                    'github': '#333333',
-                    'reddit': '#ff4500',
-                    'snapchat': '#fffc00',
-                    'pinterest': '#bd081c',
-                    'other': '#6c757d'
+                    'tiktok': '#ff0050', 'facebook': '#1877f2', 'linkedin': '#0a66c2', 'instagram': '#c32aa3',
+                    'twitter': '#1da1f2', 'youtube': '#ff0000', 'github': '#333333', 'reddit': '#ff4500',
+                    'snapchat': '#fffc00', 'pinterest': '#bd081c', 'other': '#6c757d'
                 };
 
                 let currentY = startY;
-
                 platforms.forEach(platform => {
                     const count = platformCounts[platform];
                     const barWidth = Math.max((count / maxCount) * maxBarWidth, 20);
                     const color = platformColors[platform] || platformColors['other'];
-
-                    // Draw the bar
                     ctx.fillStyle = color;
                     ctx.fillRect(startX, currentY, barWidth, barHeight);
-
-                    // Draw the text label
                     ctx.fillStyle = '#333';
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'left';
                     const textX = startX + barWidth + 10;
                     const textY = currentY + barHeight / 2 + 4;
                     ctx.fillText(`${platform.charAt(0).toUpperCase() + platform.slice(1)}: ${count}`, textX, textY);
-
                     currentY += barHeight + barSpacing;
                 });
             }
-
-            // Function to display the output content
-            function displayResults(output) {
-                resultsArea.innerHTML = '';
-
-                if (!output || output.trim() === '') {
-                    resultsArea.innerHTML = '<p class="no-results-message">No results found for this name.</p>';
-                    return;
+            
+            // *** NEW: Function to append a new chunk of results to the UI ***
+            function appendResultChunk(chunk) {
+                // Clear the "initial message" on the first result
+                const initialMessage = resultsArea.querySelector('.initial-message');
+                if (initialMessage) {
+                    initialMessage.remove();
                 }
 
-                // Try to parse as JSON first
-                const parsedJSON = tryParseJSON(output);
-                
+                if (!chunk || chunk.trim() === '') return;
+
+                const parsedJSON = tryParseJSON(chunk);
                 if (parsedJSON) {
-                    // Handle JSON data
-                    if (Array.isArray(parsedJSON)) {
-                        // Display as structured results
-                        parsedJSON.forEach(item => {
-                            const resultItem = document.createElement('div');
-                            resultItem.classList.add('result-item');
-                            
-                            Object.keys(item).forEach(key => {
-                                const value = item[key];
-                                if (typeof value === 'string' && value.startsWith('http')) {
-                                    // Create link for URLs
-                                    const link = document.createElement('a');
-                                    link.href = value;
-                                    link.textContent = `${key}: ${value}`;
-                                    link.target = '_blank';
-                                    resultItem.appendChild(link);
-                                    resultItem.appendChild(document.createElement('br'));
-                                } else {
-                                    const p = document.createElement('p');
-                                    p.innerHTML = `<strong>${key}:</strong> ${value}`;
-                                    resultItem.appendChild(p);
-                                }
-                            });
-                            
-                            resultsArea.appendChild(resultItem);
-                        });
-                    } else {
-                        // Display JSON object
+                    // Accumulate results for visualization
+                    const items = Array.isArray(parsedJSON) ? parsedJSON : [parsedJSON];
+                    allResults.push(...items);
+
+                    // Display as structured results
+                    items.forEach(item => {
                         const resultItem = document.createElement('div');
-                        resultItem.classList.add('output-content');
-                        resultItem.textContent = JSON.stringify(parsedJSON, null, 2);
+                        resultItem.classList.add('result-item');
+                        Object.keys(item).forEach(key => {
+                            const value = item[key];
+                            const p = document.createElement('p');
+                            if (typeof value === 'string' && value.startsWith('http')) {
+                                p.innerHTML = `<strong>${key}:</strong> <a href="${value}" target="_blank">${value}</a>`;
+                            } else {
+                                p.innerHTML = `<strong>${key}:</strong> ${value}`;
+                            }
+                            resultItem.appendChild(p);
+                        });
                         resultsArea.appendChild(resultItem);
-                    }
-                    
-                    // Try to extract platform data for visualization
-                    const platformData = extractPlatformData(parsedJSON);
-                    drawResultsVisualization(platformData);
-                    
-                } else if (isHTML(output)) {
-                    // Handle HTML content
+                    });
+                } else if (isHTML(chunk)) {
                     const htmlContainer = document.createElement('div');
                     htmlContainer.classList.add('html-content');
-                    htmlContainer.innerHTML = output;
+                    htmlContainer.innerHTML = chunk;
                     resultsArea.appendChild(htmlContainer);
-                    
-                    // Try to extract platform data from HTML text
-                    const textContent = htmlContainer.textContent || htmlContainer.innerText;
-                    const platformData = extractPlatformData(textContent);
-                    drawResultsVisualization(platformData);
-                    
+                    allResults.push(...extractPlatformData(htmlContainer.textContent));
                 } else {
-                    // Handle plain text
                     const textContainer = document.createElement('div');
                     textContainer.classList.add('output-content');
-                    textContainer.textContent = output;
+                    textContainer.textContent = chunk;
                     resultsArea.appendChild(textContainer);
-                    
-                    // Try to extract platform data from text
-                    const platformData = extractPlatformData(output);
-                    drawResultsVisualization(platformData);
+                    allResults.push(...extractPlatformData(chunk));
                 }
+
+                // Update visualization with all data received so far
+                drawResultsVisualization(allResults);
             }
 
             // Function to clear results
@@ -509,6 +453,7 @@
                 ctx.clearRect(0, 0, resultsCanvas.width, resultsCanvas.height);
                 canvasMessage.textContent = "Search to see platform distribution.";
                 canvasMessage.classList.remove('hidden');
+                allResults = []; // Reset accumulated results
             }
 
             // Function to display error messages
@@ -517,57 +462,70 @@
                 resultsArea.innerHTML = `<p class="error-message">Error: ${message}</p>`;
             }
 
-            // Function to handle the search
-            async function handleSearch() {
-                const name = personNameInput.value.trim();
+            // *** NEW: Function to safely close the SSE connection ***
+            function closeConnection() {
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                    console.log("SSE connection closed.");
+                }
+                loadingIndicator.classList.add('hidden');
+                searchButton.disabled = false;
+            }
 
+            // *** MODIFIED: The main search function now uses EventSource ***
+            function handleSearch() {
+                const name = personNameInput.value.trim();
                 if (name === '') {
                     alert('Please enter a name to search.');
                     return;
                 }
 
+                // Close any existing connection before starting a new one
+                closeConnection();
                 clearResultsAreas();
                 loadingIndicator.classList.remove('hidden');
                 searchButton.disabled = true;
 
-                try {
-                    const response = await fetch(WEBHOOK_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ chatInput: name })
-                    });
+                // Construct the URL with the query parameter
+                const urlWithQuery = `${SSE_URL}?chatInput=${encodeURIComponent(name)}`;
 
-                    if (!response.ok) {
-                        let errorText = `HTTP error! status: ${response.status}`;
-                        try {
-                            const errorBody = await response.json();
-                            if (errorBody && errorBody.message) errorText += `, message: ${errorBody.message}`;
-                        } catch (e) {
-                            const rawText = await response.text();
-                            if (rawText) errorText += `, response body: ${rawText.substring(0, 150)}...`;
+                // Initialize the EventSource connection
+                eventSource = new EventSource(urlWithQuery);
+                console.log("Connecting to SSE endpoint:", urlWithQuery);
+
+                // Listener for when the connection is successfully opened
+                eventSource.onopen = () => {
+                    console.log("SSE connection established.");
+                };
+
+                // Listener for incoming messages from the server
+                eventSource.onmessage = (event) => {
+                    // The server might send a special signal to indicate the end of the stream
+                    if (event.data === "[DONE]") {
+                        console.log("Stream finished.");
+                        closeConnection();
+                        // If no results were ever added, show a message
+                        if (resultsArea.querySelector('.initial-message')) {
+                            resultsArea.innerHTML = '<p class="no-results-message">Search complete, but no results were found.</p>';
                         }
-                        throw new Error(errorText);
+                        return;
                     }
 
-                    const data = await response.json();
-                    console.log('Search results:', data);
+                    console.log('Received data chunk:', event.data);
+                    // Process and display the data chunk
+                    appendResultChunk(event.data);
+                };
 
-                    // Handle the expected {output: string} format
-                    const output = data.output || data.results || JSON.stringify(data);
-                    displayResults(output);
-
-                } catch (error) {
-                    console.error('Search failed:', error);
-                    displayError(error.message || 'An unknown error occurred during search.');
-                } finally {
-                    loadingIndicator.classList.add('hidden');
-                    searchButton.disabled = false;
-                }
+                // Listener for any errors with the connection
+                eventSource.onerror = (error) => {
+                    console.error('EventSource failed:', error);
+                    displayError('Connection to the server was lost or failed to open.');
+                    closeConnection();
+                };
             }
 
-            // Event listeners
+            // Event listeners (Unchanged)
             searchButton.addEventListener('click', handleSearch);
             personNameInput.addEventListener('keypress', (event) => {
                 if (event.key === 'Enter') {
@@ -576,7 +534,7 @@
                 }
             });
 
-            // Initial state
+            // Initial state (Unchanged)
             clearResultsAreas();
         });
     </script>
