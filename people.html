@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>People Search Engine</title>
+
+    <!-- Style CSS -->
+    <style>
+        /* style.css content starts here */
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px; /* Space between input and button */
+        }
+
+        .search-box input[type="text"] {
+            flex-grow: 1; /* Input takes up available space */
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .search-box button {
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .search-box button:hover {
+            background-color: #0056b3;
+        }
+
+        .search-box button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #loadingIndicator {
+            text-align: center;
+            margin-top: 20px;
+            font-style: italic;
+            color: #555;
+        }
+
+        #loadingIndicator.hidden {
+            display: none;
+        }
+
+        /* Basic spinner style */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
+        #resultsContainer {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        #canvasArea {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #canvasArea h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #0056b3;
+            font-size: 1.2rem;
+        }
+
+        #resultsCanvas {
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            display: block; /* Remove extra space below inline elements */
+            margin: 0 auto; /* Center the canvas */
+        }
+
+
+        #resultsArea {
+            margin-top: 20px; /* Added space between canvas area and results list */
+            /* border-top: 1px solid #eee; /* Removed top border as it's on the container */ */
+            padding-top: 10px;
+        }
+
+        #resultsArea .initial-message,
+        #canvasArea .initial-message {
+            text-align: center;
+            color: #777;
+            font-style: italic;
+        }
+
+        /* Styling for individual result items (adjust based on webhook response) */
+        .result-item {
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            word-wrap: break-word; /* Prevent long URLs from breaking layout */
+        }
+
+        .result-item h3 {
+            margin-top: 0;
+            color: #0056b3;
+            margin-bottom: 5px;
+        }
+
+        .result-item p {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .result-item a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .result-item a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: #dc3545;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .no-results-message {
+             color: #ffc107;
+             text-align: center;
+             font-weight: bold;
+        }
+        /* style.css content ends here */
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Find People Online</h1>
+
+        <div class="search-box">
+            <input type="text" id="personName" placeholder="Enter person's name...">
+            <button id="searchButton">Search</button>
+        </div>
+
+        <div id="loadingIndicator" class="hidden">
+            <div class="spinner"></div>
+            Searching...
+        </div>
+
+        <div id="resultsContainer">
+            <div id="canvasArea">
+                <h2>Platform Distribution</h2>
+                 <!-- Canvas for visualization -->
+                <canvas id="resultsCanvas" width="700" height="150"></canvas>
+                <p id="canvasMessage" class="initial-message">Search to see platform distribution.</p>
+            </div>
+
+             <div id="resultsArea">
+                <!-- Detailed search results will be loaded here by JavaScript -->
+                <p class="initial-message">Enter a name and click Search to find profiles.</p>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- Script JS -->
+    <script>
+        // script.js content starts here
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const personNameInput = document.getElementById('personName');
+            const searchButton = document.getElementById('searchButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultsArea = document.getElementById('resultsArea');
+            const resultsCanvas = document.getElementById('resultsCanvas');
+            const canvasMessage = document.getElementById('canvasMessage');
+            const ctx = resultsCanvas.getContext('2d'); // Get the 2D drawing context
+
+            // Replace with your actual webhook URL
+            const WEBHOOK_URL = 'https://model.takenolab.tech/webhook/people';
+
+            // --- Canvas Drawing Logic ---
+
+            function drawResultsVisualization(results) {
+                const canvasWidth = resultsCanvas.width;
+                const canvasHeight = resultsCanvas.height;
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight); // Clear previous drawing
+
+                if (!results || results.length === 0) {
+                    canvasMessage.textContent = "No platform data available for visualization.";
+                    canvasMessage.classList.remove('hidden');
+                    return;
+                }
+
+                canvasMessage.classList.add('hidden'); // Hide message if drawing
+
+                // Count results per platform (normalize platform names)
+                const platformCounts = {};
+                results.forEach(result => {
+                    // *** ASSUMPTION: result object has a 'platform' property (string) ***
+                    // Adjust 'result.platform' if your webhook uses a different property name
+                    const platformName = result.platform ? result.platform.toLowerCase().trim() : 'other';
+                    platformCounts[platformName] = (platformCounts[platformName] || 0) + 1;
+                });
+
+                const platforms = Object.keys(platformCounts);
+                if (platforms.length === 0) {
+                     canvasMessage.textContent = "No platform data available for visualization.";
+                     canvasMessage.classList.remove('hidden');
+                     return;
+                }
+
+
+                // Simple bar chart visualization
+                const barHeight = 30;
+                const barSpacing = 10;
+                const startY = 10;
+                const startX = 10;
+                const maxBarWidth = canvasWidth - startX * 2 - 150; // Leave space for text labels
+                const maxCount = Math.max(...Object.values(platformCounts)); // Find the highest count
+
+                // Define some colors for common platforms
+                const platformColors = {
+                    'tiktok': '#ff0050',
+                    'facebook': '#1877f2',
+                    'linkedin': '#0a66c2',
+                    'instagram': '#c32aa3',
+                    'twitter': '#1da1f2', // X
+                    'youtube': '#ff0000',
+                    'other': '#6c757d' // Grey for anything else
+                };
+
+                let currentY = startY;
+
+                platforms.forEach(platform => {
+                    const count = platformCounts[platform];
+                    const barWidth = (count / maxCount) * maxBarWidth;
+                    const color = platformColors[platform] || platformColors['other']; // Get color, default to 'other'
+
+                    // Draw the bar
+                    ctx.fillStyle = color;
+                    ctx.fillRect(startX, currentY, barWidth, barHeight);
+
+                    // Draw the text label (Platform Name: Count)
+                    ctx.fillStyle = '#333'; // Dark text color
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'left';
+                    // Position text after the bar + some padding
+                    const textX = startX + barWidth + 10;
+                    const textY = currentY + barHeight / 2 + 5; // Center text vertically in bar
+                    ctx.fillText(`${platform.charAt(0).toUpperCase() + platform.slice(1)}: ${count}`, textX, textY); // Capitalize first letter
+
+                    currentY += barHeight + barSpacing;
+                });
+            }
+
+
+            // Function to display detailed results (HTML elements)
+            // THIS FUNCTION REMAINS LARGELY THE SAME AS BEFORE, BUT NOW IT'S CALLED *AFTER* DRAWING THE CANVAS
+            function displayDetailedResults(data) {
+                resultsArea.innerHTML = ''; // Clear previous results
+
+                if (!data || !data.results || data.results.length === 0) {
+                    // Assuming the webhook returns an object like { results: [...] }
+                    resultsArea.innerHTML = '<p class="no-results-message">No detailed results found.</p>';
+                    return;
+                }
+
+                // Assuming data.results is an array of result objects
+                // Each result object might look like:
+                // { platform: 'TikTok', url: '...', description: '...' } or similar
+                data.results.forEach(result => {
+                    const resultItem = document.createElement('div');
+                    resultItem.classList.add('result-item');
+
+                    // --- Start: Adjust the structure below based on your webhook response ---
+                    // Example structure assuming result has 'platform', 'url', 'description'
+                    if (result.platform) {
+                         const platformHeading = document.createElement('h3');
+                         platformHeading.textContent = result.platform;
+                         resultItem.appendChild(platformHeading);
+                    }
+
+                    if (result.description) {
+                        const descriptionPara = document.createElement('p');
+                         descriptionPara.textContent = result.description;
+                         resultItem.appendChild(descriptionPara);
+                    }
+
+                    if (result.url) {
+                         const urlLink = document.createElement('a');
+                         urlLink.href = result.url;
+                         urlLink.textContent = result.url; // Or maybe "View Profile"
+                         urlLink.target = "_blank"; // Open in new tab
+                         resultItem.appendChild(urlLink);
+                    }
+
+                    // If your response includes more fields (like specific metrics, photos etc.)
+                    // you will add elements here to display them.
+                    // Example: If response includes result.followers
+                    // if (result.followers !== undefined) {
+                    //    const followersPara = document.createElement('p');
+                    //    followersPara.textContent = `Followers: ${result.followers}`;
+                    //    resultItem.appendChild(followersPara);
+                    // }
+                    // --- End: Adjust the structure above based on your webhook response ---
+
+
+                    resultsArea.appendChild(resultItem);
+                });
+            }
+
+             // Function to clear both canvas and detailed results
+            function clearResultsAreas() {
+                resultsArea.innerHTML = '';
+                resultsArea.appendChild(document.createElement('p')).classList.add('initial-message');
+                resultsArea.querySelector('.initial-message').textContent = 'Enter a name and click Search to find profiles.'; // Reset initial message
+
+                ctx.clearRect(0, 0, resultsCanvas.width, resultsCanvas.height); // Clear canvas
+                canvasMessage.textContent = "Search to see platform distribution.";
+                canvasMessage.classList.remove('hidden'); // Ensure canvas message is visible
+            }
+
+
+            // Function to display error messages
+            function displayError(message) {
+                clearResultsAreas(); // Clear everything on error
+                resultsArea.innerHTML = `<p class="error-message">Error: ${message}</p>`;
+            }
+
+            // Function to handle the search
+            async function handleSearch() {
+                const name = personNameInput.value.trim();
+
+                if (name === '') {
+                    alert('Please enter a name to search.');
+                    return;
+                }
+
+                // Clear previous results and messages
+                clearResultsAreas();
+
+
+                // Show loading indicator
+                loadingIndicator.classList.remove('hidden');
+                searchButton.disabled = true; // Disable button
+
+                try {
+                    // Send the name to the webhook
+                    const response = await fetch(WEBHOOK_URL, {
+                        method: 'POST', // Assuming the webhook expects POST
+                        headers: {
+                            'Content-Type': 'application/json',
+                            // Add any other headers your webhook requires (e.g., API key)
+                        },
+                        body: JSON.stringify({ chatInput: name, sessionId: new Date().toDateTime().toMillis() }) // Send the name in a JSON body
+                        // Adjust the body structure ({ name: name }) if your webhook expects something different
+                    });
+
+                    if (!response.ok) {
+                        // Handle HTTP errors (e.g., 404, 500)
+                         let errorText = `HTTP error! status: ${response.status}`;
+                         try {
+                             const errorBody = await response.json(); // Try parsing JSON error body
+                             if(errorBody && errorBody.message) errorText += `, message: ${errorBody.message}`;
+                         } catch (e) {
+                              const rawText = await response.text(); // Fallback to raw text
+                              if(rawText) errorText += `, response body: ${rawText.substring(0, 150)}...`; // Limit message length
+                         }
+                        throw new Error(errorText);
+                    }
+
+                    const data = await response.json(); // Parse the JSON response
+
+                    // --- Use the webhook data for both the canvas and the detailed list ---
+
+                    // 1. Draw the visualization on the canvas
+                    // Pass the array of results to the drawing function
+                    // *** Make sure 'data.results' is the correct path to your results array ***
+                    drawResultsVisualization(data.results);
+
+
+                    // 2. Display the detailed results as HTML
+                    // Pass the same array to the detailed display function
+                     displayDetailedResults(data);
+
+
+                } catch (error) {
+                    // Handle network errors, JSON parsing errors, and thrown HTTP errors
+                    console.error('Search failed:', error);
+                    displayError(error.message || 'An unknown error occurred during search.');
+
+                } finally {
+                    // Hide loading indicator and enable button regardless of success or failure
+                    loadingIndicator.classList.add('hidden');
+                    searchButton.disabled = false;
+                }
+            }
+
+            // Add event listener to the button
+            searchButton.addEventListener('click', handleSearch);
+
+            // Optional: Allow searching by pressing Enter key in the input field
+            personNameInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent default form submission if input was inside a form
+                    handleSearch();
+                }
+            });
+
+             // Initial state: Clear canvas and show initial message
+             clearResultsAreas();
+        });
+
+        // script.js content ends here
+    </script>
+
+</body>
+</html>
